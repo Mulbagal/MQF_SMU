@@ -1,0 +1,121 @@
+####### File Header #######
+# Filename: Mean_Variance_Analysis_AbhayMS.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Asset Pricing QF600
+# Topic: HW 1 - Mean Variance Analysis
+# Submission Date: 24 Oct 2018
+###########################
+
+## import the required libraries:
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#### Take user inputs:
+
+rangeR = 200  # plot range for y axis (returns)
+Rf = .13      # risk free rate in percentage Eg. '.13' signifies 0.13%
+
+## set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF600 Asset Pricing/S02")
+
+## import the required input file:
+
+df = pd.read_excel('Industry_Portfolios_working.xlsx')
+
+## get the means of every asset industry return into a vector, dynamically
+
+R_vec = []
+SD_vec = []
+Industry = []
+
+def dynamic_R_vec():
+    for i in list(df)[1:]:
+        R_vec.append(round(np.mean(df[str(i)].values),4))
+        Industry.append(str(i))
+        
+def dynamic_SD_vec():
+    for i in list(df)[1:]:
+        SD_vec.append(round(np.std(df[str(i)].values),4))
+        Industry.append(str(i))
+        
+dynamic_R_vec()
+Industry = [] 
+dynamic_SD_vec()
+
+R_vec_df = pd.DataFrame({'Industry':Industry, 'Mean': R_vec})
+SD_vec_df = pd.DataFrame({'Industry':Industry, 'SD':SD_vec })
+R_SD_vec_df = pd.merge(R_vec_df, SD_vec_df, on='Industry')
+
+## get the covariances matrix of each pair of asset industry returns, dynamically
+
+Values_mat = []
+Industry = []
+
+def dynamic_value_popn():
+    for i in list(df)[1:]:
+        Values_mat.append(df[str(i)].values)
+        Industry.append(str(i))
+
+dynamic_value_popn()
+
+Cov_mat = np.cov(Values_mat)
+Cov_mat_df = pd.DataFrame(Cov_mat, Industry)
+Cov_mat_df.columns = [Industry]
+    
+###### Begin creating the Minimum Variance Frontier:
+### MV Analysis without Riskless asset
+R = np.array(R_vec)
+R_tr = np.array(R_vec).T
+Cov_in = np.linalg.pinv(Cov_mat)
+e = np.array([1]*len(list(df)[1:])).T
+e_tr = np.array([1]*len(list(df)[1:]))
+
+alpha = np.dot(R_tr , np.dot(Cov_in, e))
+theta = np.dot(R_tr , np.dot(Cov_in, R))
+delta = np.dot(e_tr , np.dot(Cov_in, e))
+
+MV_frontier = pd.DataFrame()
+MV_frontier['Return'] = [r/100 for r in range(rangeR+1)]
+MV_frontier['Std_Dev'] = ((1/delta)+((delta/(delta*theta-alpha**2))*((MV_frontier['Return']-alpha/delta)**2)))**0.5
+
+## Plot the efficient frontier (without riskless asset) with a scatter plot
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(MV_frontier['Std_Dev'], MV_frontier['Return'])
+plt.title('Mean Variance Frontier without Riskless Asset')
+plt.ylabel('Average Monthly Returns')
+plt.xlabel('Standard Deviation of Monthly Returns')
+plt.show()
+
+### MV Analysis with Riskless asset
+MV_frontier['Std_Dev_rless']=(((MV_frontier['Return']-Rf)**2)/(theta-2*alpha*Rf+delta*Rf**2))**0.5
+list_overRf = [r/100 for r in range(int(Rf*100),rangeR+1)]
+MV_frontier_riskless = MV_frontier.loc[MV_frontier['Return'].isin(list_overRf)]
+
+## Plot the efficient frontier (with riskless asset) with a scatter plot
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(MV_frontier_riskless['Std_Dev'], MV_frontier_riskless['Return'], label='MV Frontier without Riskless asset' )
+plt.plot(MV_frontier_riskless['Std_Dev_rless'], MV_frontier_riskless['Return'], label='MV Frontier with Riskless asset')
+plt.title('Mean Variance Frontier with Riskless Asset')
+plt.ylabel('Average Monthly Returns')
+plt.xlabel('Standard Deviation of Monthly Returns')
+plt.legend
+plt.show()
+
+#### Tangency Portfolio Analysis
+Rtg = (alpha*Rf-theta)/(delta*Rf-alpha)
+lambd = (Rtg-Rf)/(theta-2*alpha*Rf+delta*Rf**2)
+opt_wts = lambd * np.dot(Cov_in, R-Rf*e)
+Optimum_Portfolio = pd.DataFrame({'Industry':Industry, 'Weights':opt_wts })
+
+### Write the output to Excel
+writer = pd.ExcelWriter('HW1_output_ams.xlsx')
+R_SD_vec_df.to_excel(writer,'Sheet1')
+Cov_mat_df.to_excel(writer,'Sheet2')
+Optimum_Portfolio.to_excel(writer,'Sheet3')
+writer.save()   
