@@ -1,0 +1,129 @@
+####### File Header #######
+# Filename: QF603_mini_project_2_ams.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Quantitative Analysis of Financial Markets QF603
+# Topic: Mini Project 2
+# Submission Date: 7 Nov 2018
+###########################
+
+### Import the required libraries:
+import os
+import pandas as pd
+import numpy as np
+import statsmodels.formula.api as sm
+
+## set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF603 Quantitative Analysis of Financial Markets/Assignments/Mini Project Task 2")
+
+### Read the two input files provided:
+DJI = pd.read_csv('^DJI.csv')
+SnP = pd.read_csv('^GSPC.csv')
+
+## Convert them to dataframes:
+dji_df_daily = pd.DataFrame(DJI)
+snp_df_daily = pd.DataFrame(SnP)
+
+# subset only Date and Adj Close columns:
+dji_df_daily = pd.DataFrame(dji_df_daily, columns = ("Date", "Adj Close"))
+snp_df_daily = pd.DataFrame(snp_df_daily, columns = ("Date", "Adj Close"))
+
+
+## Function to convert daily log returns to yearly log returns: ###############
+    
+def yearly(x):
+    # create Year column
+    x['Year'] = pd.DatetimeIndex(x['Date']).year
+    # get max date per year
+    x_yearly = pd.DataFrame(x.groupby(['Year'], sort = False).max())
+    # drop the row for 2018 as we don't have data for last day of Dec 2018, other years now have Dec last day values
+    x_yearly.drop(2018)
+    # drop the year index
+    x_yearly.reset_index(drop=True, inplace=True)
+    
+    return x_yearly
+
+## the function loop for yearly(x): ends here #################################
+
+## Function to create the 'LogReturns' column: ################################
+    
+def reshape_logreturns(x):
+    
+    # convert dates to DateTime format, and sort
+    x['Date'] = pd.to_datetime(x['Date'], format='%Y-%m-%d')
+    x['key'] = np.arange(len(x))
+    
+    # merge the same datasource, with the previous day's adj close price
+    x_copy = x
+    x_copy['Prev_key'] = x_copy['key'] -1
+    
+    x_merge = pd.merge( x_copy, x, left_on='Prev_key', right_on='key' ) 
+    x_merge = pd.DataFrame(x_merge, columns = ("Date_x", "Adj Close_x",  "Adj Close_y"))
+    x_merge.columns = ("Date", "Adj_Close", "Prev_Adj_Close")
+    
+    # calculate the log returns
+    x_merge['LogReturn'] = np.log(x_merge.Adj_Close) - np.log(x_merge.Prev_Adj_Close)
+             
+    ## Keep only required columns:
+    x_merge= pd.DataFrame(x_merge, columns = ("Date", "LogReturn"))
+    x_merge['Date'] = x_merge['Date'].dt.date # Keep only the date, time is not required in the timestamp
+    
+    ## Bind the Index name to the Log returns column:
+    # extract the first 3 letters ('dji' or 'snp' from the index name)
+    name = [i for i in globals() if globals()[i] is x][0][:3]
+    
+    # parse the existing column names into a list
+    col_names = x_merge.columns.tolist()
+    
+    # find the relevant column and append the 3 lettered 'name' in the list
+    col_names[col_names.index('LogReturn')] = name + '_LogReturn'
+    
+    # put the list as the new column names
+    x_merge.columns = col_names
+    
+    return(x_merge)
+## the function loop for reshape_logreturns(x) ends here ######################
+    
+## Function to perform regression using the two indices' logreturns: ##########
+    
+def regress(DJI, SNP):
+    ### Merge the two dataframes based on date to begin regression:
+    Reg_df = pd.merge( DJI, SNP, on='Date') 
+
+    # The dependent variable is log return of DJI (dji_df_LogReturn) column (y)
+    # The independent variable is log return of DJI (snp_df_LogReturn) column (x)
+
+    col_names = Reg_df.columns.tolist()
+    col_names[col_names.index('dji_LogReturn')] = 'y_r_it'
+    col_names[col_names.index('snp_LogReturn')] = 'x_r_mt'
+    Reg_df.columns = col_names
+    
+    # Perform the simple linear regression:
+    est = sm.ols(formula = 'y_r_it ~ x_r_mt' ,data = Reg_df ).fit()
+    return est
+
+## the function loop for regress(x): ends here ################################
+    
+
+### call the reshape_logreturns function to get the required dataframes with DAILY log returns columns               
+DJI_daily = reshape_logreturns(dji_df_daily) 
+SNP_daily = reshape_logreturns(snp_df_daily) 
+
+### call the yearly function to get the required dataframes with annual data
+DJI_yearly = yearly(DJI_daily)
+SNP_yearly = yearly(SNP_daily)
+
+### call the regress function to get the daily and yearly regression
+Daily_regression = regress(DJI_daily, SNP_daily)
+Yearly_regression = regress(DJI_yearly, SNP_yearly)
+      
+print(Daily_regression.summary(),  Yearly_regression.summary())
+
+### Write the outputs to CSV:
+writer = open('Daily_LogReturns_OLS.csv','w')
+writer.write(Daily_regression.summary().as_csv())
+writer.close()
+
+writer = open('Yearly_LogReturns_OLS.csv','w')
+writer.write(Yearly_regression.summary().as_csv())
+writer.close()
