@@ -1,0 +1,125 @@
+####### File Header #######
+# Filename: Linear_Factor_Models_AbhayMS.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Asset Pricing QF600
+# Topic: HW 2 - Linear Factor Models
+# Submission Date: 31 Oct 2018
+###########################
+
+## import the required libraries:
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import stats
+
+
+#### Take user inputs:
+
+rangeR = 2  # plot range for x axis (beta)
+Rf = .13      # risk free rate in percentage Eg. '.13' signifies 0.13%
+
+## set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF600 Asset Pricing/Assignments/2")
+
+## import the required input file:
+
+df1 = pd.read_excel('Industry_Portfolios_working.xlsx')
+df2 = pd.read_excel('Market_Portfolio_working.xlsx')
+
+## join the dataframes based on date:
+
+df = pd.merge(df1, df2, on='Date')
+#print(df)
+
+##### Perform Linear Regression for all the Industries, 
+## with Market as the independent variable x and respective return of the industry as dependent variable y
+
+alpha = []
+beta = []
+Industry = []
+
+def regress_with_market():
+    for i in list(df)[1:]:
+        df_y = df[str(i)]
+        df_x = df['Market']
+               
+        slope, intercept, r_value, p_value, std_err = stats.linregress(df_x, df_y)
+        Industry.append(str(i))
+        alpha.append(round(intercept, 2))
+        beta.append(round(slope, 2))
+       
+  
+## Call the regression function
+regress_with_market()
+
+## Create the alpha-beta dataframe:
+alpha_beta_df = pd.DataFrame({'Industry':Industry, 'Alpha':alpha, 'Beta': beta})
+#print(alpha_beta_df)
+
+# get the means of every asset industry return into a vector, dynamically
+
+R_vec = []
+Industry = []
+
+def dynamic_R_vec():
+    for i in list(df)[1:]:
+        R_vec.append(round(np.mean(df[str(i)].values),2))
+        Industry.append(str(i))
+       
+dynamic_R_vec()
+
+## get the covariances matrix of asset industry vs market return, dynamically
+
+Cov_mat = []
+Industry = []
+
+def dynamic_cov():
+    for i in list(df)[1:]:
+        df_y = df[str(i)]
+        df_x = df['Market']
+        cov = np.cov(np.array(df_y), np.array(df_x))
+        Cov_mat.append(cov[0,1])
+        Industry.append(str(i))
+                
+dynamic_cov()
+
+### SML vector:
+
+slope, intercept, r_value, p_value, std_err = stats.linregress(beta, R_vec)
+print(slope, intercept)
+
+# Create a list of values in the best fit line
+b = beta[:]
+
+for i in [0,rangeR]:
+    b.append(i)
+
+abline_values = [(slope * i) + intercept for i in b]
+
+line_df = pd.DataFrame({'R':abline_values, 'Beta': b})
+pos_df = pd.DataFrame({'Industry':Industry, 'R':R_vec, 'Beta': beta})
+
+## Plot the efficient frontier (without riskless asset) with a scatter plot
+
+plt.figure(figsize=(14,9) , facecolor="#f1f1f1")
+plt.plot(line_df['Beta'], line_df['R'], color = 'g', label = 'SML')
+plt.plot(pos_df['Beta'], pos_df['R'], linestyle = ' ',marker='o', color='b', label = 'Industry Positions' )
+plt.title('Security Market Line')
+plt.ylabel('Returns (%) ->')
+plt.xlabel('Beta ->')
+plt.legend(loc='upper left')
+plt.grid(False)
+plt.xticks([0, 0.25,0.5, 0.75, 1, 1.25, 1.5, 1.75, 2])
+plt.yticks([0.5, 0.75, 1, 1.25])
+plt.show()
+    
+### Write the output to Excel
+writer = pd.ExcelWriter('HW2_output_ams.xlsx')
+alpha_beta_df.to_excel(writer,'Alpha Beta')
+pos_df.to_excel(writer,'R vs Beta')
+writer.save()   
+
+
