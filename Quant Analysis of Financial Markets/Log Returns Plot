@@ -1,0 +1,90 @@
+####### File Header #######
+# Filename: QF603_mini_project_1_Q456_ams.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Quantitative Analysis of Financial Markets QF603
+# Topic: Mini Project 1
+# Submission Date: 24 Oct 2018
+###########################
+
+### Import the required libraries:
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime as dt
+from datetime import date, timedelta
+
+## set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF603 Quantitative Analysis of Financial Markets/Assignments/Mini Project Task 1")
+
+##### Q4,5,6:
+## Answers to Q4 will be outputted as 2 seperate Excel files in the working directory
+## Answers to Q5 and Q6 will be displayed in the console
+
+### Read the two input files provided:
+DJI = pd.read_csv('^DJI.csv')
+SnP = pd.read_csv('^GSPC.csv')
+
+## Convert them to dataframes:
+dji_df = pd.DataFrame(DJI)
+snp_df = pd.DataFrame(SnP)
+
+# subset only Date and Adj Close columns:
+dji_df = pd.DataFrame(dji_df, columns = ("Date", "Adj Close"))
+snp_df = pd.DataFrame(snp_df, columns = ("Date", "Adj Close"))
+
+## Create the 'LogReturns' column:
+    
+def reshape_returns(i,j):
+    for x in (dji_df, snp_df):
+    # convert dates to DateTime format, and sort
+
+        x['Date'] = pd.to_datetime(x['Date'], format='%Y-%m-%d')
+        #x.sort_values(by='Date', inplace= True, ascending=False)
+        x['key'] = np.arange(len(x))
+        #print(x.head())
+
+        # merge the same datasource, with the previous day's adj close price
+        x_copy = x
+        x_copy['Prev_key'] = x_copy['key'] -1
+        #print(x_copy.head())
+
+        x_merge = pd.merge( x_copy, x, left_on='Prev_key', right_on='key' ) 
+        x_merge = pd.DataFrame(x_merge, columns = ("Date_x", "Adj Close_x",  "Adj Close_y"))
+        x_merge.columns = ("Date", "Adj_Close", "Prev_Adj_Close")
+        
+        x_merge['LogReturn'] = np.log(x_merge.Adj_Close) - np.log(x_merge.Prev_Adj_Close)
+        #print(x_merge.head())
+        
+        log_returns_mean = round(np.mean(x_merge.LogReturn),7)
+        log_returns_sample_var = round(np.sum((x_merge.LogReturn-log_returns_mean)**2)/(len(x_merge.LogReturn)-1),7)
+        
+              
+        ## Keep only required columns:
+        x_merge= pd.DataFrame(x_merge, columns = ("Date", "LogReturn"))
+        x_merge['Date'] = x_merge['Date'].dt.date # Keep only date, timestamp is not required
+        
+        ### Write the Daily Log returns output to Excel:
+        bookname = 'Q4. ' + i[j]
+        writer = pd.ExcelWriter(bookname+'.xlsx')
+        workbook  = writer.book
+        x_merge.to_excel(writer,bookname, index=False)
+        writer.save() 
+        
+        ### Create the time series graph:
+        plt.style.use('seaborn')
+        plt.figure(figsize=(14,9))
+        plt.plot(x_merge['Date'], x_merge['LogReturn'], label= 'Q5. ' + i[j] + ' - Time Series plot of Daily Log Returns' )
+        plt.title('Q5. ' + i[j] + ' - Time Series plot of Daily Log Returns')
+        plt.ylabel('LogReturns($)')
+        plt.xlabel('Dates ->')
+        plt.legend
+        plt.show()      
+        
+        print("Q6. Sample mean of ",i[j], " is " ,log_returns_mean, " and unbiased variance is ",log_returns_sample_var)
+        
+        j=j+1
+        ## the function loop ends here
+                
+reshape_returns(["Dow Jones Index", "S&P 500 Index"] ,0) 
