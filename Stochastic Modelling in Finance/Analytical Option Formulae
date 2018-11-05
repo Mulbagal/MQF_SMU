@@ -1,0 +1,215 @@
+####### File Header #######
+# Filename: QF620_project_part1_ams.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Stochastic Modelling in Finance QF620
+# Topic: Project Part 1: Analytical Option Formulae
+# Submission Date: 30 Nov 2018
+###########################
+
+#   Consider the following European options:
+# 1 Vanilla call/put
+# 2 Digital cash-or-nothing call/put
+# 3 Digital asset-or-nothing call/put
+#   Derive and implement the following models to value these options in Python:
+# 1 Black-Scholes model
+# 2 Bachelier model
+# 3 Black76 model
+# 4 Displaced-Diffusion model
+
+### This means that 24 functions need to be created: Call & Put for 3 options and 4 valuation models (2*3*4 = 24)
+## Dictionary for the same:
+# 1.  Vanilla // Call // Black-Scholes
+# 2.  Vanilla // Put // Black-Scholes
+# 3.  Digital cash-or-nothing // Call // Black-Scholes
+# 4.  Digital cash-or-nothing // Put // Black-Scholes
+# 5.  Digital asset-or-nothing // Call // Black-Scholes
+# 6.  Digital asset-or-nothing // Put // Black-Scholes
+# 7.  Vanilla // Call // Bachelier
+# 8.  Vanilla // Put // Bachelier
+# 9.  Digital cash-or-nothing // Call // Bachelier
+# 10. Digital cash-or-nothing // Put // Bachelier
+# 11. Digital asset-or-nothing // Call // Bachelier
+# 12. Digital asset-or-nothing // Put // Bachelier
+# 13. Vanilla // Call // Black76
+# 14. Vanilla // Put // Black76
+# 15. Digital cash-or-nothing // Call // Black76
+# 16. Digital cash-or-nothing // Put // Black76
+# 17. Digital asset-or-nothing // Call // Black76
+# 18. Digital asset-or-nothing // Put // Black76
+# 19. Vanilla // Call // Displaced-Diffusion
+# 20. Vanilla // Put // Displaced-Diffusion
+# 21. Digital cash-or-nothing // Call // Displaced-Diffusion
+# 22. Digital cash-or-nothing // Put // Displaced-Diffusion
+# 23. Digital asset-or-nothing // Call // Displaced-Diffusion
+# 24. Digital asset-or-nothing // Put // Displaced-Diffusion
+##
+
+### Import the required libraries:
+import os
+#import pandas as pd
+import numpy as np
+import scipy .stats as si
+#import statsmodels.formula.api as sm
+
+## Set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF620 Stochastic Modelling in Finance/Project")
+
+## Set user defined inputs here:
+
+# S: Spot price at time t:
+S = 100
+
+# T: Maturity of the option (time to maturity is defined as tau-t):
+tau = 2
+t = 0
+T = tau - t # don't change this
+
+# r: Risk free interest rate, assumed to be constant between times t and T:
+r = 0.05
+
+#sigma: Volatility of underlying asset, the standard deviation of the asset returns:
+sigma = 0.4
+
+# K: Strike price of the option:
+K = round(S * np.exp(r*T) , 2)
+
+# q: The dividend rate of the asset. This is assumed to pay dividends at a continuous rate:
+q = 2
+
+#### Define 24 functions:
+
+# 1. Vanilla // Call // Black-Scholes: ########################################
+def vanilla_call_BS_1(S, K, T, r, sigma):
+      
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    van_call_bs_1 = (S * si.norm.cdf(d1, 0.0, 1.0) - K * np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0))
+    
+    return van_call_bs_1
+###############################################################################
+    
+# 2. Vanilla // Put // Black-Scholes: #########################################
+def vanilla_put_BS_2(S, K, T, r, sigma):
+     
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    van_put_bs_2 = (K * np.exp(-r * T) * si.norm.cdf(-d2, 0.0, 1.0) - S * si.norm.cdf(-d1, 0.0, 1.0))
+    
+    return van_put_bs_2
+###############################################################################
+    
+# 3.  Digital cash-or-nothing // Call // Black-Scholes: #######################
+def cash_call_BS_3(S, K, T, r, sigma):
+      
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)    
+    cash_call_bs_3 = np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0)
+    
+    return cash_call_bs_3
+###############################################################################
+    
+# 4.  Digital cash-or-nothing // Put // Black-Scholes: ########################
+def cash_put_BS_4(S, K, T, r, sigma):
+      
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T) 
+            
+    cash_put_bs_4 = np.exp(-r * T) * si.norm.cdf(-d2, 0.0, 1.0)
+    
+    return cash_put_bs_4 
+###############################################################################
+    
+# 5.  Digital asset-or-nothing // Call // Black-Scholes: ######################
+def asset_call_BS_5(S, K, T, r, sigma):
+      
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+        
+    asset_call_bs_5 = S * si.norm.cdf(d1, 0.0, 1.0)
+    
+    return asset_call_bs_5
+###############################################################################
+    
+# 6.  Digital asset-or-nothing // Put // Black-Scholes: #######################
+def asset_put_BS_6(S, K, T, r, sigma):
+      
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+        
+    asset_put_bs_6 = S * si.norm.cdf(-d1, 0.0, 1.0)
+   
+    return asset_put_bs_6
+###############################################################################
+    
+# 7.  Vanilla // Call // Bachelier: ###########################################
+def vanilla_call_Bach_7(S, K, T, sigma):
+      
+    d = (S - K) / (S * sigma * np.sqrt(T))
+        
+    van_call_bach_7 = (S - K) * si.norm.cdf(d, 0.0, 1.0) + S * sigma * np.sqrt(T) * si.norm.pdf(d, 0.0, 1.0)
+    
+    return van_call_bach_7   
+###############################################################################
+    
+# 8.  Vanilla // Put // Bachelier: ############################################
+def vanilla_put_Bach_8(S, K, T, sigma):
+      
+    d = (S - K) / (S * sigma * np.sqrt(T))
+        
+    van_put_bach_8 = K - S + ((S - K) * si.norm.cdf(d, 0.0, 1.0) + S * sigma * np.sqrt(T) * si.norm.pdf(d, 0.0, 1.0))
+    
+    return van_put_bach_8      
+###############################################################################
+# 9.  Digital cash-or-nothing // Call // Bachelier
+# 10. Digital cash-or-nothing // Put // Bachelier
+# 11. Digital asset-or-nothing // Call // Bachelier
+# 12. Digital asset-or-nothing // Put // Bachelier
+# 13. Vanilla // Call // Black76
+# 14. Vanilla // Put // Black76
+# 15. Digital cash-or-nothing // Call // Black76
+# 16. Digital cash-or-nothing // Put // Black76
+# 17. Digital asset-or-nothing // Call // Black76
+# 18. Digital asset-or-nothing // Put // Black76
+# 19. Vanilla // Call // Displaced-Diffusion
+# 20. Vanilla // Put // Displaced-Diffusion
+# 21. Digital cash-or-nothing // Call // Displaced-Diffusion
+# 22. Digital cash-or-nothing // Put // Displaced-Diffusion
+# 23. Digital asset-or-nothing // Call // Displaced-Diffusion
+# 24. Digital asset-or-nothing // Put // Displaced-Diffusion
+    
+
+#### Calling and printing all 24 functions (comment out anything which is not required):
+
+print("\nGiven the following inputs:\n")
+print("Spot price at time ", t, " is $", S)
+print("Time to Maturity is", T, " years")
+print("Strike price is $", K)
+print("Volatility of underlying asset is", sigma)
+print("Risk-free rate is", r*100, "%")
+print("Dividend rate of asset is", q)
+print("\n\nThe respective options valued under different models are:\n")
+    
+output_vanilla_call_BS_1 = round(vanilla_call_BS_1(S, K, T, r, sigma),2)
+print("1. Vanilla Call option under Black-Scholes model is : $",output_vanilla_call_BS_1) 
+
+output_vanilla_put_BS_2 = round(vanilla_put_BS_2(S, K, T, r, sigma),2)
+print("2. Vanilla Put option under Black-Scholes model is : $",output_vanilla_put_BS_2)  
+
+output_cash_call_BS_3 = round(cash_call_BS_3(S, K, T, r, sigma),2)
+print("3. Digital cash-or-nothing Call option under Black-Scholes model is : $",output_cash_call_BS_3) 
+
+output_cash_put_BS_4 = round(cash_put_BS_4(S, K, T, r, sigma),2)
+print("4. Digital cash-or-nothing Put option under Black-Scholes model is : $",output_cash_put_BS_4)
+
+output_asset_call_BS_5 = round(asset_call_BS_5(S, K, T, r, sigma),2)
+print("5. Digital asset-or-nothing Call option under Black-Scholes model is : $",output_asset_call_BS_5) 
+
+output_asset_put_BS_6 = round(asset_put_BS_6(S, K, T, r, sigma),2)
+print("6. Digital asset-or-nothing Call option under Black-Scholes model is : $",output_asset_put_BS_6) 
+
+output_vanilla_call_Bach_7 = round(vanilla_call_Bach_7(S, K, T, sigma),2)
+print("7. Vanilla Call option under Bachelier model is : $",output_vanilla_call_Bach_7) 
+
+output_vanilla_put_Bach_8 = round(vanilla_put_Bach_8(S, K, T, sigma),2)
+print("8. Vanilla Put option under Bachelier model is : $",output_vanilla_put_Bach_8) 
