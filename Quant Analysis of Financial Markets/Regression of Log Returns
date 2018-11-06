@@ -37,9 +37,8 @@ def yearly(x):
     # get max date per year
     x_yearly = pd.DataFrame(x.groupby(['Year'], sort = False).max())
     # drop the row for 2018 as we don't have data for last day of Dec 2018, other years now have Dec last day values
-    x_yearly.drop(2018)
-    # drop the year index
     x_yearly.reset_index(drop=True, inplace=True)
+    x_yearly = x_yearly[:-1]
     
     return x_yearly
 
@@ -127,3 +126,5 @@ writer.close()
 writer = open('Yearly_LogReturns_OLS.csv','w')
 writer.write(Yearly_regression.summary().as_csv())
 writer.close()
+
+
