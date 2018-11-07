@@ -221,4 +221,58 @@ def vanilla_put_DD_20(F, K, T, sigma, beta):
     
 # 21. Digital cash-or-nothing // Call // Displaced-Diffusion
 # 22. Digital cash-or-nothing // Put // Displaced-Diffusion
-# 23. Digital asset-or-nothing //
+# 23. Digital asset-or-nothing // Call // Displaced-Diffusion
+# 24. Digital asset-or-nothing // Put // Displaced-Diffusion
+    
+
+#### Calling and printing all 24 functions (comment out anything which is not required):
+
+print("\nGiven the following inputs:\n")
+print("Spot price at time ", t, " is $", S)
+print("Time to Maturity is", T, " years")
+print("Strike price is $", K)
+print("Volatility of underlying asset is", sigma)
+print("Risk-free rate is", r*100, "%")
+print("Discount factor for forward price is", round(disc_fac,2))
+print("Dividend rate of asset is", q)
+print("\n\nThe respective options valued under different models are:\n")
+    
+output_vanilla_call_BS_1 = round(vanilla_call_BS_1(S, K, T, r, sigma),2)
+print("1. Vanilla Call option under Black-Scholes model is : $",output_vanilla_call_BS_1) 
+
+output_vanilla_put_BS_2 = round(vanilla_put_BS_2(S, K, T, r, sigma),2)
+print("2. Vanilla Put option under Black-Scholes model is : $",output_vanilla_put_BS_2)  
+
+output_cash_call_BS_3 = round(cash_call_BS_3(S, K, T, r, sigma),2)
+print("3. Digital cash-or-nothing Call option under Black-Scholes model is : $",output_cash_call_BS_3) 
+
+output_cash_put_BS_4 = round(cash_put_BS_4(S, K, T, r, sigma),2)
+print("4. Digital cash-or-nothing Put option under Black-Scholes model is : $",output_cash_put_BS_4)
+
+output_asset_call_BS_5 = round(asset_call_BS_5(S, K, T, r, sigma),2)
+print("5. Digital asset-or-nothing Call option under Black-Scholes model is : $",output_asset_call_BS_5) 
+
+output_asset_put_BS_6 = round(asset_put_BS_6(S, K, T, r, sigma),2)
+print("6. Digital asset-or-nothing Call option under Black-Scholes model is : $",output_asset_put_BS_6) 
+
+output_vanilla_call_Bach_7 = round(vanilla_call_Bach_7(S, K, T, sigma),2)
+print("7. Vanilla Call option under Bachelier model is : $",output_vanilla_call_Bach_7) 
+
+output_vanilla_put_Bach_8 = round(vanilla_put_Bach_8(S, K, T, sigma),2)
+print("8. Vanilla Put option under Bachelier model is : $",output_vanilla_put_Bach_8) 
+
+###
+
+output_vanilla_call_B76_13 = round(vanilla_call_B76_13(F, K, T, sigma),2)
+print("13. Vanilla Call option under Black 76 model is : $",output_vanilla_call_B76_13) 
+
+output_vanilla_put_B76_14 = round(vanilla_put_B76_14(F, K, T, sigma),2)
+print("14. Vanilla Put option under Black 76 model is : $",output_vanilla_put_B76_14) 
+
+###
+
+output_vanilla_call_DD_19 = round(vanilla_call_DD_19(F, K, T, sigma, beta),2)
+print("19. Vanilla Call option under Displaced Diffusion model is : $",output_vanilla_call_DD_19) 
+
+output_vanilla_put_DD_20 = round(vanilla_put_DD_20(F, K, T, sigma, beta),2)
+print("20. Vanilla Put option under Displaced Diffusion model is : $",output_vanilla_put_DD_20) 
