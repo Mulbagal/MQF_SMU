@@ -32,13 +32,16 @@ snp_df_daily = pd.DataFrame(snp_df_daily, columns = ("Date", "Adj Close"))
 ## Function to convert daily log returns to yearly log returns: ###############
     
 def yearly(x):
-    # create Year column
+    
     x['Year'] = pd.DatetimeIndex(x['Date']).year
-    # get max date per year
-    x_yearly = pd.DataFrame(x.groupby(['Year'], sort = False).max())
-    # drop the row for 2018 as we don't have data for last day of Dec 2018, other years now have Dec last day values
+    ## get max date per year
+    x_yearly = pd.DataFrame(x.groupby(['Year'], sort = True).max())
+    x_yearly = pd.DataFrame(x_yearly['Date'])
+    ## drop the row for 2018 as we don't have data for last day of Dec 2018, other years now have Dec last day values
     x_yearly.reset_index(drop=True, inplace=True)
     x_yearly = x_yearly[:-1]
+    ## merge original value to these last dates
+    x_yearly = pd.merge(x_yearly, x, on='Date')
     
     return x_yearly
 
@@ -126,5 +129,3 @@ writer.close()
 writer = open('Yearly_LogReturns_OLS.csv','w')
 writer.write(Yearly_regression.summary().as_csv())
 writer.close()
-
-
