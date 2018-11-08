@@ -111,15 +111,20 @@ def regress(DJI, SNP):
 DJI_daily = reshape_logreturns(dji_df_daily) 
 SNP_daily = reshape_logreturns(snp_df_daily) 
 
-### call the yearly function to get the required dataframes with annual data
-DJI_yearly = yearly(DJI_daily)
-SNP_yearly = yearly(SNP_daily)
+### call the yearly function to get the required dataframes with annual data and also get log returns columns
+dji_yearly1 = yearly(dji_df_daily)
+snp_yearly1 = yearly(snp_df_daily)
+DJI_yearly = reshape_logreturns(dji_yearly1) 
+SNP_yearly = reshape_logreturns(snp_yearly1) 
 
 ### call the regress function to get the daily and yearly regression
 Daily_regression = regress(DJI_daily, SNP_daily)
 Yearly_regression = regress(DJI_yearly, SNP_yearly)
       
 print(Daily_regression.summary(),  Yearly_regression.summary())
+
+print("Sigma of Daily Regression is : ", round (np.sqrt(Daily_regression.scale), 4))
+print("Sigma of Yearly Regression is : ", round (np.sqrt(Yearly_regression.scale), 4))
 
 ### Write the outputs to CSV:
 writer = open('Daily_LogReturns_OLS.csv','w')
