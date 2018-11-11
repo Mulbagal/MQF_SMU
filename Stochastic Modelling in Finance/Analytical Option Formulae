@@ -83,8 +83,7 @@ disc_fac = np.exp (-r * T)
 # beta: Beta factor for the Displaced Diffusion Forward price model:
 beta = 1
 
-# q: The dividend rate of the asset. This is assumed to pay dividends at a continuous rate:
-q = 2
+#F = Ft * np.exp ( - ((sigma ** 2) * T /2 ) + 
 
 #### Define 24 functions:
 
@@ -115,7 +114,7 @@ def cash_call_BS_3(S, K, T, r, sigma):
       
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)    
-    cash_call_bs_3 = np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0)
+    cash_call_bs_3 = K * np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0)
     
     return cash_call_bs_3
 ###############################################################################
@@ -126,7 +125,7 @@ def cash_put_BS_4(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T) 
             
-    cash_put_bs_4 = np.exp(-r * T) * si.norm.cdf(-d2, 0.0, 1.0)
+    cash_put_bs_4 = K * np.exp(-r * T) * si.norm.cdf(-d2, 0.0, 1.0)
     
     return cash_put_bs_4 
 ###############################################################################
@@ -166,14 +165,45 @@ def vanilla_put_Bach_8(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))
         
-    van_put_bach_8 = K - S + ((S - K) * si.norm.cdf(d, 0.0, 1.0) + S * sigma * np.sqrt(T) * si.norm.pdf(d, 0.0, 1.0))
+    van_put_bach_8 = ( K - S ) * si.norm.cdf(-d, 0.0, 1.0) - S * sigma * np.sqrt(T) * si.norm.pdf(-d, 0.0, 1.0)
     
     return van_put_bach_8      
 ###############################################################################
+    
 # 9.  Digital cash-or-nothing // Call // Bachelier
+def cash_call_Bach_9(S, K, T, sigma):
+      
+    d = (S - K) / (S * sigma * np.sqrt(T))    
+    cash_call_bach_9 = S * sigma * np.sqrt(T) * si.norm.pdf(d, 0.0, 1.0)
+    
+    return cash_call_bach_9
+###############################################################################
+    
 # 10. Digital cash-or-nothing // Put // Bachelier
+def cash_put_Bach_10(S, K, T, sigma):
+      
+    d = (S - K) / (S * sigma * np.sqrt(T))    
+    cash_put_bach_10 = S * sigma * np.sqrt(T) * si.norm.pdf(-d, 0.0, 1.0)
+    
+    return cash_put_bach_10
+###############################################################################
+    
 # 11. Digital asset-or-nothing // Call // Bachelier
+def asset_call_Bach_11(S, K, T, sigma):
+      
+    d = (S - K) / (S * sigma * np.sqrt(T))    
+    asset_call_bach_11 = ( S - K ) * si.norm.cdf(d, 0.0, 1.0)
+    
+    return asset_call_bach_11
+###############################################################################
+    
 # 12. Digital asset-or-nothing // Put // Bachelier
+def asset_put_Bach_12(S, K, T, sigma):
+      
+    d = (S - K) / (S * sigma * np.sqrt(T))    
+    asset_put_bach_12 = ( S - K ) * si.norm.cdf(-d, 0.0, 1.0)
+    
+    return asset_put_bach_12    
 ###############################################################################
     
 # 13. Vanilla // Call // Black76: #############################################
@@ -197,10 +227,47 @@ def vanilla_put_B76_14(F, K, T, sigma):
         
     return van_put_b76_14     
 ###############################################################################
+    
 # 15. Digital cash-or-nothing // Call // Black76
+def cash_call_B76_15(F, K, T, sigma):
+    
+    d1 = (np.log (F / K) + (0.5 * (sigma ** 2) )* T ) / (sigma * np.sqrt(T)) 
+    d2 = d1 - sigma * np.sqrt(T) 
+    
+    cash_call_b76_15 = disc_fac * K * si.norm.cdf(d2, 0.0, 1.0)
+        
+    return cash_call_b76_15 
+############################################################################### 
+    
 # 16. Digital cash-or-nothing // Put // Black76
+def cash_put_B76_16(F, K, T, sigma):
+    
+    d1 = (np.log (F / K) + (0.5 * (sigma ** 2) )* T ) / (sigma * np.sqrt(T)) 
+    d2 = d1 - sigma * np.sqrt(T) 
+    
+    cash_put_b76_16 = disc_fac * K * si.norm.cdf(-d2, 0.0, 1.0)
+        
+    return cash_put_b76_16
+###############################################################################
+    
 # 17. Digital asset-or-nothing // Call // Black76
+def asset_call_B76_17(F, K, T, sigma):
+    
+    d1 = (np.log (F / K) + (0.5 * (sigma ** 2) )* T ) / (sigma * np.sqrt(T)) 
+        
+    asset_call_b76_17 = disc_fac * F * si.norm.cdf(d1, 0.0, 1.0)
+        
+    return asset_call_b76_17  
+###############################################################################
+    
 # 18. Digital asset-or-nothing // Put // Black76
+def asset_put_B76_18(F, K, T, sigma):
+    
+    d1 = (np.log (F / K) + (0.5 * (sigma ** 2) )* T ) / (sigma * np.sqrt(T)) 
+        
+    asset_put_b76_18 = disc_fac * F * si.norm.cdf(-d1, 0.0, 1.0)
+        
+    return asset_put_b76_18  
 ###############################################################################   
     
 # 19. Vanilla // Call // Displaced-Diffusion: #################################
@@ -220,21 +287,50 @@ def vanilla_put_DD_20(F, K, T, sigma, beta):
 ###############################################################################
     
 # 21. Digital cash-or-nothing // Call // Displaced-Diffusion
-# 22. Digital cash-or-nothing // Put // Displaced-Diffusion
-# 23. Digital asset-or-nothing // Call // Displaced-Diffusion
-# 24. Digital asset-or-nothing // Put // Displaced-Diffusion
+def cash_call_DD_21(F, K, T, sigma, beta):
+        
+    cash_call_dd_21 = cash_call_B76_15( F / beta, K + ((1-beta)/beta) * F, T, sigma* beta)
+        
+    return cash_call_dd_21  
+###############################################################################
     
+# 22. Digital cash-or-nothing // Put // Displaced-Diffusion
+def cash_put_DD_22(F, K, T, sigma, beta):
+        
+    cash_put_dd_22 = cash_put_B76_16( F / beta, K + ((1-beta)/beta) * F, T, sigma* beta)
+        
+    return cash_put_dd_22  
+###############################################################################
+    
+# 23. Digital asset-or-nothing // Call // Displaced-Diffusion
+def asset_call_DD_23(F, K, T, sigma, beta):
+        
+    asset_call_dd_23 = asset_call_B76_17( F / beta, K + ((1-beta)/beta) * F, T, sigma* beta)
+        
+    return asset_call_dd_23  
+###############################################################################   
+    
+# 24. Digital asset-or-nothing // Put // Displaced-Diffusion
+def asset_put_DD_24(F, K, T, sigma, beta):
+        
+    asset_put_dd_24 = asset_put_B76_18( F / beta, K + ((1-beta)/beta) * F, T, sigma* beta)
+        
+    return asset_put_dd_24 
+###############################################################################
+###############################################################################
+     
 
 #### Calling and printing all 24 functions (comment out anything which is not required):
 
 print("\nGiven the following inputs:\n")
-print("Spot price at time ", t, " is $", S)
-print("Time to Maturity is", T, " years")
+print("Spot price at time", t, "is $", S)
+print("Time to Maturity is", T, "years")
 print("Strike price is $", K)
 print("Volatility of underlying asset is", sigma)
 print("Risk-free rate is", r*100, "%")
 print("Discount factor for forward price is", round(disc_fac,2))
-print("Dividend rate of asset is", q)
+
+
 print("\n\nThe respective options valued under different models are:\n")
     
 output_vanilla_call_BS_1 = round(vanilla_call_BS_1(S, K, T, r, sigma),2)
@@ -253,7 +349,7 @@ output_asset_call_BS_5 = round(asset_call_BS_5(S, K, T, r, sigma),2)
 print("5. Digital asset-or-nothing Call option under Black-Scholes model is : $",output_asset_call_BS_5) 
 
 output_asset_put_BS_6 = round(asset_put_BS_6(S, K, T, r, sigma),2)
-print("6. Digital asset-or-nothing Call option under Black-Scholes model is : $",output_asset_put_BS_6) 
+print("6. Digital asset-or-nothing Put option under Black-Scholes model is : $",output_asset_put_BS_6) 
 
 output_vanilla_call_Bach_7 = round(vanilla_call_Bach_7(S, K, T, sigma),2)
 print("7. Vanilla Call option under Bachelier model is : $",output_vanilla_call_Bach_7) 
@@ -261,7 +357,17 @@ print("7. Vanilla Call option under Bachelier model is : $",output_vanilla_call_
 output_vanilla_put_Bach_8 = round(vanilla_put_Bach_8(S, K, T, sigma),2)
 print("8. Vanilla Put option under Bachelier model is : $",output_vanilla_put_Bach_8) 
 
-###
+output_cash_call_Bach_9 = round(cash_call_Bach_9(S, K, T, sigma),2)
+print("9. Digital cash-or-nothing Call option under Bachelier model is : $",output_cash_call_Bach_9) 
+
+output_cash_put_Bach_10 = round(cash_put_Bach_10(S, K, T, sigma),2)
+print("10. Digital cash-or-nothing Put option under Bachelier model is : $",output_cash_put_Bach_10)
+
+output_asset_call_Bach_11 = round(asset_call_Bach_11(S, K, T, sigma),2)
+print("11. Digital asset-or-nothing Call option under Bachelier model is : $",output_asset_call_Bach_11) 
+
+output_asset_put_Bach_12 = round(asset_put_Bach_12(S, K, T, sigma),2)
+print("12. Digital asset-or-nothing Put option under Bachelier model is : $",output_asset_put_Bach_12) 
 
 output_vanilla_call_B76_13 = round(vanilla_call_B76_13(F, K, T, sigma),2)
 print("13. Vanilla Call option under Black 76 model is : $",output_vanilla_call_B76_13) 
@@ -269,10 +375,44 @@ print("13. Vanilla Call option under Black 76 model is : $",output_vanilla_call_
 output_vanilla_put_B76_14 = round(vanilla_put_B76_14(F, K, T, sigma),2)
 print("14. Vanilla Put option under Black 76 model is : $",output_vanilla_put_B76_14) 
 
-###
+output_cash_call_B76_15 = round(cash_call_B76_15(S, K, T, sigma),2)
+print("15. Digital cash-or-nothing Call option under Black 76 model is : $",output_cash_call_B76_15) 
+
+output_cash_put_B76_16 = round(cash_put_B76_16(S, K, T, sigma),2)
+print("16. Digital cash-or-nothing Put option under Black 76 model is : $",output_cash_put_B76_16)
+
+output_asset_call_B76_17 = round(asset_call_B76_17(S, K, T, sigma),2)
+print("17. Digital asset-or-nothing Call option under Black 76 model is : $",output_asset_call_B76_17) 
+
+output_asset_put_B76_18 = round(asset_put_B76_18(S, K, T, sigma),2)
+print("18. Digital asset-or-nothing Put option under Black 76 model is : $",output_asset_put_B76_18)
 
 output_vanilla_call_DD_19 = round(vanilla_call_DD_19(F, K, T, sigma, beta),2)
 print("19. Vanilla Call option under Displaced Diffusion model is : $",output_vanilla_call_DD_19) 
 
 output_vanilla_put_DD_20 = round(vanilla_put_DD_20(F, K, T, sigma, beta),2)
 print("20. Vanilla Put option under Displaced Diffusion model is : $",output_vanilla_put_DD_20) 
+
+output_cash_call_DD_21 = round(cash_call_DD_21(F, K, T, sigma, beta),2)
+print("21. Digital cash-or-nothing Call option under Displaced Diffusion model is : $",output_cash_call_DD_21)
+
+output_cash_put_DD_22 = round(cash_put_DD_22(F, K, T, sigma, beta),2)
+print("22. Digital cash-or-nothing Put option under Displaced Diffusion model is : $",output_cash_put_DD_22)
+
+output_asset_call_DD_23 = round(asset_call_DD_23(F, K, T, sigma, beta),2)
+print("23. Digital asset-or-nothing Call option under Displaced Diffusion model is : $",output_asset_call_DD_23) 
+
+output_asset_put_DD_24 = round(asset_put_DD_24(F, K, T, sigma, beta),2)
+print("24. Digital asset-or-nothing Put option under Displaced Diffusion model is : $",output_asset_put_DD_24)
+
+
+## Verification  for the Digital options of all 4 models: ## Delete Later:
+print("\n\nVerification for the Digital options:\n")
+print("Black-Scholes Vanilla Call: $", round(output_asset_call_BS_5 - output_cash_call_BS_3 , 2 ))
+print("Black-Scholes Vanilla Put: $", round(output_cash_put_BS_4 - output_asset_put_BS_6 , 2))
+print("Bachelier Vanilla Call: $", round(output_asset_call_Bach_11 + output_cash_call_Bach_9 , 2))
+print("Bachelier Vanilla Put: $",round( -( output_cash_put_Bach_10 + output_asset_put_Bach_12 ) , 2))
+print("Black 76 Vanilla Call: $", round(output_asset_call_B76_17 - output_cash_call_B76_15 , 2))
+print("Black 76 Vanilla Put: $", round(output_cash_put_B76_16 - output_asset_put_B76_18 , 2))
+print("Displaced Diffusion Vanilla Call: $", round(output_asset_call_DD_23 - output_cash_call_DD_21 , 2))
+print("Displaced Diffusion Vanilla Put: $", round(output_cash_put_DD_22 - output_asset_put_DD_24 , 2))
