@@ -1,0 +1,175 @@
+####### File Header #######
+# Filename: Multi_Factor_Models_AbhayMS.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Asset Pricing QF600
+# Topic: HW 3 - Multi Factor Models
+# Submission Date: 14 Nov 2018
+###########################
+
+## import the required libraries:
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+import scipy as sp
+
+#### Take user inputs:
+
+num = 100_000  # number of observations for Monte Carlo Simulation
+
+## set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF600 Asset Pricing/Assignments/3")
+
+## import the required input file:
+ind = pd.read_excel('Industry_Portfolios_working.xlsx')
+risk = pd.read_excel('Risk_Factors_working.xlsx')
+
+
+##### Task 1 : Calculate performance metrics based on excess industry returns
+
+### Performance metrics: ######################################################
+Industry = []
+sharpe_ratio = []
+sortino_ratio = []
+jenson_alpha = []
+three_factor_alpha = []
+
+def performance():
+    for i in list(ind)[1:]:
+        ind_subset = ind[ ['Date',i ]]
+        df1 = pd.merge(ind_subset, risk, on = 'Date')
+        
+        # Sharpe ratio:
+        sharpe_ratio.append(round( np.mean(df1[str(i)] - df1['Rf']) / np.sqrt(np.var(df1[str(i)] - df1['Rf'])), 3))
+        
+        # Sortino ratio (with risk- free rate as target):
+        semi_var = np.mean ((np.minimum(df1[str(i)], 0))**2 )
+        sortino_ratio.append(round( np.mean(df1[str(i)] - df1['Rf']) / np.sqrt(semi_var) ,3 ))
+        
+        # Jenson's alpha:
+        x = np.array(df1['Rm-Rf']).reshape(-1,1)
+        y = np.array(df1[str(i)] - df1['Rf']).reshape(-1,1)
+        regr = LinearRegression().fit(x, y)
+        jenson_alpha.append(round(regr.intercept_[0], 3))
+        
+        # Three-factor alpha:
+        x = df1[['Rm-Rf' , 'SMB' , 'HML']]
+        y = np.array(df1[str(i)] - df1['Rf']).reshape(-1,1)
+        regr = LinearRegression().fit(x, y)
+        three_factor_alpha.append(round(regr.intercept_[0], 3))
+        
+        Industry.append(str(i))
+        
+# performance() function ends here
+##############################################################################     
+
+# Call the performance() function: 
+            
+performance()
+
+# Create the required dataframe:
+
+Performance_Metrics = pd.DataFrame({'Industry':Industry
+                                    ,'Sharpe_Ratio':sharpe_ratio
+                                    ,'Sortino_Ratio':sortino_ratio
+                                    ,'Jenson`s_Alpha':jenson_alpha
+                                    ,'Three_Factor_Alpha':three_factor_alpha
+                                    })
+#print(Performance_Metrics)
+
+
+### Create the required bar charts:
+
+for i in list(Performance_Metrics)[1:]:
+    plt.figure(figsize=(10,7))
+    plt.bar(np.arange(len(Performance_Metrics['Industry'])), Performance_Metrics[str(i)], align='center', alpha=0.5)
+    plt.xticks(np.arange(len(Performance_Metrics['Industry'])), Performance_Metrics['Industry'])
+    plt.ylabel(str(i))
+    plt.title(str(i))
+    plt.show()
+
+####################################### Task 1 Complete #######################
+###############################################################################
+
+##### Task 2 : Minimum-Variance Frontier Revisited: 
+
+### Get the Return of the portfopio
+R_vec = []
+
+def dynamic_R_vec():
+    for i in list(ind)[1:]:
+        R_vec.append(np.mean(ind[str(i)].values))
+        
+dynamic_R_vec()        
+        
+## get the covariances matrix 
+
+Values_mat = []
+
+def dynamic_value_popn():
+    for i in list(ind)[1:]:
+        Values_mat.append(ind[str(i)].values)
+     
+dynamic_value_popn()
+
+Cov_mat = np.cov(Values_mat)
+
+
+### Function to get Monte Carlo Simulation to generate a vector of normalized weights;
+# and populate the lists to get returns of portfolio and risk associated (sigma)
+min_var_Rp = []
+min_var_sigma = []
+
+def Monte_Carlo():
+    for i in range(num):
+        
+        ## Generate vector of random weights
+        w = list(sp.random.uniform(low=0, high=1, size= len(list(ind)[1:])))
+        
+        ## Normalize the weights to sum up to 1
+        w = [ i / sum(w) for i in w]
+        
+        ## Convert weight list to an array
+        w = np.array(w)
+        
+        ## Calculate the Mean from these weights:
+        R_tr = np.array(R_vec).T
+        
+        Rp = np.dot(R_tr, w)
+        
+        ## Calculate the Standard deviation from these weights:
+        w_tr = w.T
+        
+        sigma = np.sqrt(np.dot(w_tr, np.dot(Cov_mat, w)))
+        
+        ## Append the Rp and sigma to the respective lists:
+        min_var_Rp.append(Rp)
+        min_var_sigma.append(sigma)
+
+## Monte_Carlo function ends here ##
+###############################################################################
+
+Monte_Carlo()
+        
+#### Create the minimum-variance dataframe:
+MV_frontier = pd.DataFrame()
+MV_frontier['Return'] = min_var_Rp
+MV_frontier['Std_Dev'] = min_var_sigma
+
+
+## Plot the efficient frontier (without riskless asset) with a scatter plot:
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(MV_frontier['Std_Dev'], MV_frontier['Return'], linestyle = '', marker = 'o')
+plt.title('Mean Variance Frontier without Riskless Asset')
+plt.ylabel('Average Monthly Returns')
+plt.xlabel('Standard Deviation of Monthly Returns')
+plt.show()
+
+### Write the Task 1 output to Excel
+writer = pd.ExcelWriter('HW3_output.xlsx')
+Performance_Metrics.to_excel(writer,'Performance Metrics')
+writer.save()   
