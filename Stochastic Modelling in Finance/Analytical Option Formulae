@@ -174,7 +174,7 @@ def vanilla_put_Bach_8(S, K, T, sigma):
 def cash_call_Bach_9(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    cash_call_bach_9 = S * sigma * np.sqrt(T) * si.norm.pdf(d, 0.0, 1.0)
+    cash_call_bach_9 = K * si.norm.cdf(d, 0.0, 1.0)
     
     return cash_call_bach_9
 ###############################################################################
@@ -183,7 +183,7 @@ def cash_call_Bach_9(S, K, T, sigma):
 def cash_put_Bach_10(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    cash_put_bach_10 = S * sigma * np.sqrt(T) * si.norm.pdf(-d, 0.0, 1.0)
+    cash_put_bach_10 = K * si.norm.cdf(-d, 0.0, 1.0)
     
     return cash_put_bach_10
 ###############################################################################
@@ -192,7 +192,7 @@ def cash_put_Bach_10(S, K, T, sigma):
 def asset_call_Bach_11(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    asset_call_bach_11 = ( S - K ) * si.norm.cdf(d, 0.0, 1.0)
+    asset_call_bach_11 = S * ( si.norm.cdf(d, 0.0, 1.0) + sigma * np.sqrt(T) * si.norm.pdf(d, 0.0, 1.0))
     
     return asset_call_bach_11
 ###############################################################################
@@ -201,7 +201,7 @@ def asset_call_Bach_11(S, K, T, sigma):
 def asset_put_Bach_12(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    asset_put_bach_12 = ( S - K ) * si.norm.cdf(-d, 0.0, 1.0)
+    asset_put_bach_12 = S * ( si.norm.cdf(-d, 0.0, 1.0) + sigma * np.sqrt(T) * si.norm.pdf(-d, 0.0, 1.0))
     
     return asset_put_bach_12    
 ###############################################################################
@@ -410,8 +410,8 @@ print("24. Digital asset-or-nothing Put option under Displaced Diffusion model i
 print("\n\nVerification for the Digital options:\n")
 print("Black-Scholes Vanilla Call: $", round(output_asset_call_BS_5 - output_cash_call_BS_3 , 2 ))
 print("Black-Scholes Vanilla Put: $", round(output_cash_put_BS_4 - output_asset_put_BS_6 , 2))
-print("Bachelier Vanilla Call: $", round(output_asset_call_Bach_11 + output_cash_call_Bach_9 , 2))
-print("Bachelier Vanilla Put: $",round( -( output_cash_put_Bach_10 + output_asset_put_Bach_12 ) , 2))
+print("Bachelier Vanilla Call: $", round(output_asset_call_Bach_11 - output_cash_call_Bach_9 , 2))
+print("Bachelier Vanilla Put: $",round(output_cash_put_Bach_10 - output_asset_put_Bach_12 , 2))
 print("Black 76 Vanilla Call: $", round(output_asset_call_B76_17 - output_cash_call_B76_15 , 2))
 print("Black 76 Vanilla Put: $", round(output_cash_put_B76_16 - output_asset_put_B76_18 , 2))
 print("Displaced Diffusion Vanilla Call: $", round(output_asset_call_DD_23 - output_cash_call_DD_21 , 2))
