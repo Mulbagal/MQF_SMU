@@ -114,7 +114,7 @@ def cash_call_BS_3(S, K, T, r, sigma):
       
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T)    
-    cash_call_bs_3 = K * np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0)
+    cash_call_bs_3 = np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0)
     
     return cash_call_bs_3
 ###############################################################################
@@ -125,7 +125,7 @@ def cash_put_BS_4(S, K, T, r, sigma):
     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
     d2 = d1 - sigma * np.sqrt(T) 
             
-    cash_put_bs_4 = K * np.exp(-r * T) * si.norm.cdf(-d2, 0.0, 1.0)
+    cash_put_bs_4 = np.exp(-r * T) * si.norm.cdf(-d2, 0.0, 1.0)
     
     return cash_put_bs_4 
 ###############################################################################
@@ -174,7 +174,7 @@ def vanilla_put_Bach_8(S, K, T, sigma):
 def cash_call_Bach_9(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    cash_call_bach_9 = K * si.norm.cdf(d, 0.0, 1.0)
+    cash_call_bach_9 = si.norm.cdf(d, 0.0, 1.0)
     
     return cash_call_bach_9
 ###############################################################################
@@ -183,7 +183,7 @@ def cash_call_Bach_9(S, K, T, sigma):
 def cash_put_Bach_10(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    cash_put_bach_10 = K * si.norm.cdf(-d, 0.0, 1.0)
+    cash_put_bach_10 = si.norm.cdf(-d, 0.0, 1.0)
     
     return cash_put_bach_10
 ###############################################################################
@@ -234,7 +234,7 @@ def cash_call_B76_15(F, K, T, sigma):
     d1 = (np.log (F / K) + (0.5 * (sigma ** 2) )* T ) / (sigma * np.sqrt(T)) 
     d2 = d1 - sigma * np.sqrt(T) 
     
-    cash_call_b76_15 = disc_fac * K * si.norm.cdf(d2, 0.0, 1.0)
+    cash_call_b76_15 = disc_fac * si.norm.cdf(d2, 0.0, 1.0)
         
     return cash_call_b76_15 
 ############################################################################### 
@@ -245,7 +245,7 @@ def cash_put_B76_16(F, K, T, sigma):
     d1 = (np.log (F / K) + (0.5 * (sigma ** 2) )* T ) / (sigma * np.sqrt(T)) 
     d2 = d1 - sigma * np.sqrt(T) 
     
-    cash_put_b76_16 = disc_fac * K * si.norm.cdf(-d2, 0.0, 1.0)
+    cash_put_b76_16 = disc_fac * si.norm.cdf(-d2, 0.0, 1.0)
         
     return cash_put_b76_16
 ###############################################################################
@@ -408,11 +408,11 @@ print("24. Digital asset-or-nothing Put option under Displaced Diffusion model i
 
 ## Verification  for the Digital options of all 4 models: ## Delete Later:
 print("\n\nVerification for the Digital options:\n")
-print("Black-Scholes Vanilla Call: $", round(output_asset_call_BS_5 - output_cash_call_BS_3 , 2 ))
-print("Black-Scholes Vanilla Put: $", round(output_cash_put_BS_4 - output_asset_put_BS_6 , 2))
-print("Bachelier Vanilla Call: $", round(output_asset_call_Bach_11 - output_cash_call_Bach_9 , 2))
-print("Bachelier Vanilla Put: $",round(output_cash_put_Bach_10 - output_asset_put_Bach_12 , 2))
-print("Black 76 Vanilla Call: $", round(output_asset_call_B76_17 - output_cash_call_B76_15 , 2))
-print("Black 76 Vanilla Put: $", round(output_cash_put_B76_16 - output_asset_put_B76_18 , 2))
-print("Displaced Diffusion Vanilla Call: $", round(output_asset_call_DD_23 - output_cash_call_DD_21 , 2))
-print("Displaced Diffusion Vanilla Put: $", round(output_cash_put_DD_22 - output_asset_put_DD_24 , 2))
+print("Black-Scholes Vanilla Call: $", round(output_asset_call_BS_5 - K * output_cash_call_BS_3 , 2 ))
+print("Black-Scholes Vanilla Put: $", round(K * output_cash_put_BS_4 - output_asset_put_BS_6 , 2))
+print("Bachelier Vanilla Call: $", round(output_asset_call_Bach_11 - K * output_cash_call_Bach_9 , 2))
+print("Bachelier Vanilla Put: $",round(K * output_cash_put_Bach_10 - output_asset_put_Bach_12 , 2))
+print("Black 76 Vanilla Call: $", round(output_asset_call_B76_17 - K * output_cash_call_B76_15 , 2))
+print("Black 76 Vanilla Put: $", round(K * output_cash_put_B76_16 - output_asset_put_B76_18 , 2))
+print("Displaced Diffusion Vanilla Call: $", round(output_asset_call_DD_23 - K * output_cash_call_DD_21 , 2))
+print("Displaced Diffusion Vanilla Put: $", round(K * output_cash_put_DD_22 - output_asset_put_DD_24 , 2))
