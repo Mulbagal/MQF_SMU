@@ -1,0 +1,167 @@
+####### File Header #######
+# Filename: Multi_Period_Pricing_AbhayMS.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Asset Pricing QF600
+# Topic: HW 4 - Multi Period Asset Pricing
+# Submission Date: 21 Nov 2018
+###########################
+
+## import the required libraries:
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy as sp
+
+#### Take user inputs:
+
+num = 10_000  # number of observations for Monte Carlo Simulation
+gamma_low = [1 , 1 , 1]
+gamma_high = [4 , 7, 7] # range of gamma, for each part in assignment
+gamma_step = 0.1 # stepsize of gamma
+delta = 0.99 # constant in the pricing kernel
+mkt_sr = 0.41 # market Sharpe ratio
+phi = 0.65 # fraction of aggregate consumption that remains in event of disaster
+pi = 0.017 # the probability of phi in 'nu = ln (phi)
+
+## set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 2/QF600 Asset Pricing/Assignments/4")
+
+######  Get consumption growth from vectors of epsilon and nu:
+
+epsilon = [sp.random.standard_normal() for i in range(num)]
+# epsilon follows standard normal distribution
+
+nu = [np.log(phi) if sp.random.uniform(low = 0.0 , high = 1.0) < pi else 0 for i in range(num)]
+# simulate nu using standard uniform distribution over [0,1]
+# nu = 0 with (1 - pi) probability and ln(phi) with (pi) probability
+
+## get the respective value for consumption growth from the corresponding values of nu and epsilon:
+cons_growth = pd.DataFrame({'epsilon':epsilon, 'nu':nu})
+g = list(np.exp( 0.02 + (0.02 * cons_growth['epsilon']) + cons_growth['nu'] ))    
+ 
+###############################################################################       
+############## Part 1 : Hansen - Jagannathan Bound ############################
+
+## generate a list of gamma from the user defined range and stepsize:
+low =  gamma_low[0] * 10 
+high =  gamma_high[0] * 10 + 1
+step = int(gamma_step * 10)
+gamma1 = list(range( low, high , step ))
+gamma1 = [ i/10 for i in gamma1 ]
+
+###### Function to get the pricing kernel M for all values of gamma in user specified range:        
+SD_by_E_of_M = []
+  
+def pricing_kernel():     
+    for i in gamma1:
+        ## get the corresponding value of pricing kernel 'M' from gamma, user defined delta and gamma
+        M = [delta * ( j ** (-i) ) for j in g]
+            
+        ## get the corresponding SD(M) / E(M) value
+        SD_by_E_of_M.append(np.std(M) / np.mean(M))
+        
+# pricing_kernel function ends here
+###############################################################################
+pricing_kernel()
+
+# Create a dataframe of gamma and corresponding SD(M) / E(M) value:
+Han_Jag = pd.DataFrame({'Gamma' : gamma1 ,'SD(M)/E(M)' : SD_by_E_of_M})    
+
+# Find nearest value in SD(M)/E(M) = Market Sharpe Ratio in the list SD_by_E_of_M:
+x = np.asarray(SD_by_E_of_M)
+near = x.flat[np.abs(x - mkt_sr).argmin()]   
+
+# Find the corresponding gamma value:
+min_gamma = gamma1[SD_by_E_of_M.index(near)]       
+
+## Plot the values for H-J bound:
+plt.style.use('seaborn')
+plt.figure(figsize=(8,5))
+plt.plot(Han_Jag['Gamma'], Han_Jag['SD(M)/E(M)'])
+plt.plot([min_gamma], [near], marker='o', markersize=5, color="red")
+plt.title('Part 1: Hansen - Jagannathan Bound')
+plt.ylabel('SD(M) / E(M)')
+plt.xlabel('Gamma')
+plt.show()
+
+###############################################################################       
+############## Part 2 : Price - Dividend Ratio ################################
+
+## generate a list of gamma from the user defined range and stepsize:
+low =  gamma_low[1] * 10 
+high =  gamma_high[1] * 10 + 1
+step = int(gamma_step*10)
+gamma2 = list(range( low, high , step ))
+gamma2 = [ i/10 for i in gamma2 ]
+###### Get the Price - Dividend Ratio for all values of gamma in user specified range:        
+P1_by_D = []
+   
+for i in gamma2:
+    ## get the corresponding value of delta times ( consumption growth raised to 1 - gamma)
+    value = [delta * ( j ** ( 1 - i ) ) for j in g]
+        
+    ## get the corresponding Expectation of value
+    P1_by_D.append( np.mean( value ) )
+
+# Create a dataframe of gamma and corresponding P1 / D value:
+Price_Div_Rat = pd.DataFrame({'Gamma' : gamma2 ,'P1/D' : P1_by_D})    
+
+## Plot the values for Price-Dividend Ratio:
+plt.style.use('seaborn')
+plt.figure(figsize=(8,5))
+plt.plot(Price_Div_Rat['Gamma'], Price_Div_Rat['P1/D'])
+plt.title('Part 2: Price - Dividend Ratio')
+plt.ylabel('P1 / D')
+plt.xlabel('Gamma')
+plt.show()
+
+###############################################################################       
+############## Part 3 : Equity Premium ########################################
+
+## generate a list of gamma from the user defined range and stepsize:
+low =  gamma_low[2] * 10 
+high =  gamma_high[2] * 10 + 1
+step = int(gamma_step*10)
+gamma3 = list(range( low, high , step ))
+gamma3 = [ i/10 for i in gamma3 ]
+###### Function to get the pricing kernel M for all values of gamma in user specified range:        
+E_Rm = []
+Rf = []
+   
+for i in gamma3:
+    ## get the corresponding value of D / P1 times E[g]
+    value = [delta * ( j ** ( 1 - i ) )  for j in g]
+    P1_by_D = np.mean (value)
+    D_by_P1 = P1_by_D ** ( -1 )
+    
+    ## get the corresponding Expectation of value
+    E_Rm.append( D_by_P1 * np.mean( g ))
+    
+    ## get the corresponding value of pricing kernel 'M' from gamma, user defined delta and gamma
+    M = [delta * ( j ** (-i) ) for j in g]
+    
+    ## get the corresponding risk free rate
+    Rf.append( np.mean( M ) ** ( -1 ) )
+
+# Create a dataframe of gamma and corresponding E_Rm and Rf values:
+Eq_prem = pd.DataFrame({'Gamma' : gamma3 ,'Expected Market Return' : E_Rm , 'Risk-free Rate' : Rf})    
+Eq_prem['Equity Premium'] = np.log ( Eq_prem['Expected Market Return'] / Eq_prem['Risk-free Rate'] )
+
+# Find the corresponding equity premium for gamma = 6:
+corr_gamma_6 = ( Eq_prem.loc[Eq_prem['Gamma'] == 6, 'Equity Premium'].iloc[0] ) * 100
+
+## Plot the values for Price-Dividend Ratio:
+plt.style.use('seaborn')
+plt.figure(figsize=(8,5))
+plt.plot(Eq_prem['Gamma'], Eq_prem['Equity Premium'])
+plt.title('Part 3: Equity Premium')
+plt.ylabel('Equity Premium')
+plt.xlabel('Gamma')
+plt.show()
+
+############################### Print #########################################
+print("Part 1: Smallest gamma for which Market Sharpe Ratio is achieved is:" , min_gamma)
+print("Part 3: Risk Premium for gamma = 6 is:" , round(corr_gamma_6, 2 ), "%")
