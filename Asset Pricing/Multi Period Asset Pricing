@@ -19,8 +19,9 @@ import scipy as sp
 num = 10_000  # number of observations for Monte Carlo Simulation
 gamma_low = [1 , 1 , 1]
 gamma_high = [4 , 7, 7] # range of gamma, for each part in assignment
-gamma_step = 0.05 # stepsize of gamma
-delta = 0.99 # constant in the pricing kernel
+power10 = -1 # the power of gamma_step
+gamma_step = 1 * (10 ** power10) # stepsize of gamma ## Eg: for gamma step of 0.1, write power10 = -1, gamma_step = 1
+delta = 0.99 # reflection of impatience, constant in the pricing kernel
 mkt_sr = 0.41 # market Sharpe ratio
 phi = 0.65 # fraction of aggregate consumption that remains in event of disaster
 pi = 0.017 # the probability of phi in 'nu = ln (phi)
@@ -46,11 +47,11 @@ g = list(np.exp( 0.02 + (0.02 * cons_growth['epsilon']) + cons_growth['nu'] ))
 ############## Part 1 : Hansen - Jagannathan Bound ############################
 
 ## generate a list of gamma from the user defined range and stepsize:
-low =  gamma_low[0] * 100 
-high =  gamma_high[0] * 100 + 1
-step = int(gamma_step * 100)
+low =  gamma_low[0] * ( 10 ** (-1 * power10) ) 
+high =  gamma_high[0] * ( 10 ** (-1 * power10) ) + 1
+step = int(gamma_step * ( 10 ** (-1 * power10) ))
 gamma1 = list(range( low, high , step ))
-gamma1 = [ i/100 for i in gamma1 ]
+gamma1 = [ i/ ( 10 ** (-1 * power10) ) for i in gamma1 ]
 
 ###### Function to get the pricing kernel M for all values of gamma in user specified range:        
 SD_by_E_of_M = []
@@ -91,11 +92,11 @@ plt.show()
 ############## Part 2 : Price - Dividend Ratio ################################
 
 ## generate a list of gamma from the user defined range and stepsize:
-low =  gamma_low[1] * 100 
-high =  gamma_high[1] * 100 + 1
-step = int(gamma_step*100)
+low =  gamma_low[1] * ( 10 ** (-1 * power10) ) 
+high =  gamma_high[1] * ( 10 ** (-1 * power10) ) + 1
+step = int(gamma_step * ( 10 ** (-1 * power10) ))
 gamma2 = list(range( low, high , step ))
-gamma2 = [ i/100 for i in gamma2 ]
+gamma2 = [ i/ ( 10 ** (-1 * power10) ) for i in gamma2 ]
 ###### Get the Price - Dividend Ratio for all values of gamma in user specified range:        
 P1_by_D = []
    
@@ -122,11 +123,11 @@ plt.show()
 ############## Part 3 : Equity Premium ########################################
 
 ## generate a list of gamma from the user defined range and stepsize:
-low =  gamma_low[2] * 100 
-high =  gamma_high[2] * 100 + 1
-step = int(gamma_step*100)
+low =  gamma_low[2] * ( 10 ** (-1 * power10) ) 
+high =  gamma_high[2] * ( 10 ** (-1 * power10) ) + 1
+step = int(gamma_step * ( 10 ** (-1 * power10) ))
 gamma3 = list(range( low, high , step ))
-gamma3 = [ i/100 for i in gamma3 ]
+gamma3 = [ i/ ( 10 ** (-1 * power10) ) for i in gamma3 ]
 ###### Function to get the pricing kernel M for all values of gamma in user specified range:        
 E_Rm = []
 Rf = []
