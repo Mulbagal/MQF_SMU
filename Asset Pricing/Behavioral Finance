@@ -50,7 +50,6 @@ def nu_cap(R):
     return nu_cap_R
 #nu_cap function ends here ###
 
-
 #### e_x is the error term defined as : e_x = ( delta * b0 * np.mean ( nu_cap (x * g) ) )+ (delta * x) - 1
 def e_x(x_val, b0_val):
     
@@ -67,8 +66,8 @@ def bisection (x_minus_in, x_plus_in, b0):
     if np.max ( e_x(x_minus_in , b0) ) >= 0 or np.min ( e_x(x_plus_in , b0) ) <= 0 :
         print('x_minus & x_plus conditions are not met')
     else :
-        x1 = 0.5 * ( x_minus_in + x_plus_in ) 
-        solution = e_x(x1 , b0)
+        x = 0.5 * ( x_minus_in + x_plus_in ) 
+        solution = e_x(x , b0)
         # if | e_x(x, b0) | is less than the threshold, x is the solution
         while abs ( solution ) > thres:
             x = 0.5 * ( x_minus_in + x_plus_in )
@@ -77,18 +76,16 @@ def bisection (x_minus_in, x_plus_in, b0):
                 x_minus_in = x
                 x = 0.5 * ( x_minus_in + x_plus_in )
                 solution = e_x(x , b0)
-                return solution
             # if e_x(x, b0) > 0, replace x_plus with x and rerun, as solution lies between x_minus and x
             elif e_x(x , b0) > 0:
                 x_plus_in = x
                 x = 0.5 * ( x_minus_in + x_plus_in )
                 solution = e_x(x , b0)
-                return solution
             # error check
             else:
                 return ('check the loop!')
             
-        return (solution)
+        return (x)
 # bisection function ends here    
     
 ## generate a list of b0 from the user defined range and stepsize:
@@ -115,7 +112,6 @@ plt.ylabel('Price - Dividend Ratio')
 plt.xlabel('b0')
 plt.show()
 
-
 #### Equity Premium = Expected Market Return - Rf
 Eq_prem = [ ( np.mean( g ) * i ) - Rf for i in x ]
 
@@ -131,5 +127,3 @@ plt.title('Equity Premium vs. b0')
 plt.ylabel('Equity Premium')
 plt.xlabel('b0')
 plt.show()
-
-
