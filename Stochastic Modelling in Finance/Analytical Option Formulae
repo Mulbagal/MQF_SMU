@@ -201,7 +201,7 @@ def asset_call_Bach_11(S, K, T, sigma):
 def asset_put_Bach_12(S, K, T, sigma):
       
     d = (S - K) / (S * sigma * np.sqrt(T))    
-    asset_put_bach_12 = S * ( si.norm.cdf(-d, 0.0, 1.0) + sigma * np.sqrt(T) * si.norm.pdf(-d, 0.0, 1.0))
+    asset_put_bach_12 = S * ( si.norm.cdf(-d, 0.0, 1.0) - sigma * np.sqrt(T) * si.norm.pdf(-d, 0.0, 1.0))
     
     return asset_put_bach_12    
 ###############################################################################
