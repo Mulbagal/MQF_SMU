@@ -65,9 +65,6 @@ T = tau - t # don't change this
 # S: Spot price at time t:
 S = 100
 
-# F: Forward price at time t:
-F = 100
-
 # r: Risk free interest rate, assumed to be constant between times t and T:
 r = 0.05
 
@@ -79,6 +76,9 @@ K = round(S * np.exp(r*T) , 2)
 
 # disc_fac: Discount factor for the Black 76 Forward price model:
 disc_fac = np.exp (-r * T)
+
+# F: Forward price at time t:
+F = 100
 
 # beta: Beta factor for the Displaced Diffusion Forward price model:
 beta = 1
