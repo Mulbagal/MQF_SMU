@@ -1,0 +1,188 @@
+####### File Header ###########################################################
+# Filename: Lab_Ex_1_AbhayMS.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Numerical Analysis QF607
+# Topic: Lab Exercise 1
+# Submission Date: 28 Jan 2019
+###############################################################################
+
+## import the required libraries:
+
+import os
+#import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
+
+#### Set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 3/QF607 Numerical Methods/Assignments Lab")
+
+#### Take user inputs:
+
+## Q1 : 
+i_minus = 0.01
+i_plus = 0.20 # intial estimated values of i- and i+ for bisection search
+thres = 10 ** (-5) # threshold for bisection search
+tot_tgt = 400_000 # target total value in $
+K = 400 # amt saved per month in $
+mnth = 240 # no. of months
+
+
+## Q2 :
+tol = 10 ** (-5) # tolerance level for Jacobi & Gauss Siedel
+n = 100 # dimension for the matrices
+
+
+## Q3 :
+xm = np.array( [2, 3, 4, 5, 7, 10, 15] ) # settlement date (in years)
+ym = np.array( [6.01, 6.11, 6.16, 6.22, 6.32, 6.43, 6.56] ) # corresponding interest rates (in %)
+
+
+###############################################################################
+
+#### Q1: Suppose you save money by making regular monthly deposits K and annual interest rate
+# is i, find an approximation (accurate to 10^-5 for the interest rate i that you will get a total
+# value of $400,000 if you save K=$400 per month for 240 months. Choose one of the root
+# finding methods that you have learned.
+
+## Define the function for which we need to identify the value of interest rate:
+def func1 (i):
+    tot_calc = ( K * ( ( ( 1 + ( i / 12 ) ) ** mnth ) - 1) ) / ( i / 12)
+    diff = tot_calc - tot_tgt
+    return ( diff ) 
+
+### Use Bisection search to get the value of i:
+def bisection (x_minus_in, x_plus_in):
+    i = 0.5 * ( x_minus_in + x_plus_in )
+    val = func1 (i)
+    
+    # if abs ( val ) is less than the threshold, i is the solution
+    while abs( val ) > thres:
+        i = 0.5 * ( x_minus_in + x_plus_in )
+        val = func1 (i)
+        
+        # if val < 0, replace x_minus with i and rerun, as solution lies between i and x_plus
+        if val < 0:
+            x_minus_in = i
+            i = 0.5 * ( x_minus_in + x_plus_in )
+            val = func1 (i)
+            
+        # if val > 0, replace x_plus with i and rerun, as solution lies between x_minus and i
+        elif val > 0:
+            x_plus_in = i
+            i = 0.5 * ( x_minus_in + x_plus_in )
+            val = func1 (i)
+            
+        # error check
+        else:
+            return ('check the loop!')
+         
+    return (i)
+        
+# bisection function ends here  
+
+# Call the bisection function to get the required interest rate:
+p = bisection( i_minus , i_plus )     
+
+# Print the value :
+print ("Q1. The required interest rate 'i' is", np.round( p * 100 , 2 ) , "%" ) 
+
+
+# Q1 is done ##################################################################
+
+
+
+#### Q2: Use the Jacobi method and Gauss-Seidel method to solve the following system with
+#initial guess = [ 0, 0…..0] for n=100, report the number of steps needed with tolerance of
+#10^(-5) for both methods.
+
+## Create the (n X 1) 'b' matrix:
+b = np.matrix(np.zeros(n)).reshape((n,1))
+b[:,0] = 2
+b[0,0] = b[99,0] = 3
+
+## Create the (n X n) 'A' matrix:
+A = np.matrix(np.zeros((n,n)))
+for i in range(n):
+    A[i,i]=4
+for i in range(n - 1):
+    A[i,i+1]=-1
+    A[i+1,i]=-1
+    
+## Define the jacobi funtion:
+def jacobi( A, b, tol ):
+    
+    # Create the up-triangular matrix:
+    U = np.triu( A ,k = 1 )
+    
+    # Create the low-triangular matrix:
+    L = np.tril( A, k = -1 )
+    
+    D_I = ( A-L-U ).I
+    s_old = ( np.matrix ( np.zeros ( n ) ) ).reshape( ( n, 1 ) )
+    
+    for i in range(n):
+        s_new = D_I * ( b - ( ( L + U ) * s_old ) )
+        
+        if ( np.linalg.norm( s_new ) - np.linalg.norm( s_old ) ) < tol:
+            print("Q2. The number of steps needed for Jacobi method is" , i+1 )
+            #print(s_new)
+            break
+        
+        s_old=s_new
+# jacobi function ends here
+ 
+
+## Define the gauss_seidel funtion:       
+def gauss_seidel( A, b, tol):
+    
+    # Create the up-triangular matrix:
+    U = np.triu(A,k=1)
+    
+    s_old = (np.matrix( np.zeros ( n ) ) ).reshape( (n, 1) )
+    
+    for i in range(n):
+        s_new = ( ( A - U ).I) * ( b - ( U * s_old ) )
+        
+        if ( np.linalg.norm( s_new ) - np.linalg.norm( s_old ) ) < tol:
+            print("Q2. The number of steps needed for Gauss-Seidel method is", i+1)
+            #print(s_new)
+            break
+        
+        s_old=s_new
+# gauss_seidel function ends here       
+        
+ 
+# Call both the functions:       
+jacobi( A, b, tol )
+gauss_seidel( A, b, tol )
+
+
+# Q2 is done ##################################################################
+
+
+
+#### Q3: Draw a yield curve for the following data using the nature cubic Spline interpolation.
+#(The second column represents the settlement dates and third column represents the
+#corresponding interest rates)
+
+# define the function to interpolate the values for the settlement dates and interest rates
+flin = interp1d (xm, ym, kind='cubic' )
+
+xnew = np.linspace (0, 10, num=41, endpoint=True)
+
+plt.plot(x, y, 'o', xnew, f(xnew), '-', xnew, f2(xnew), '--')
+plt.legend(['data', 'linear', 'cubic'], loc='best')
+plt.show()
+
+from gekko import GEKKO
+m= GEKKO()
+m.x=m.Param(value=np.linspace(1,15))
+m.y= m.Var()
+m.cspline(m.x,m.y,xm,ym)
+m.options.IMODE=2
+m.solve(disp=False)
+plt.plot(xm,ym,'bo',label='data')
+plt.plot(m.x,m.y,'r--',label='c')
+plt.xlabel('Settlement dates')
