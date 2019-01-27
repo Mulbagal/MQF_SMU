@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 import scipy.stats as si
 from datetime import datetime
+from sklearn.linear_model import LinearRegression
 
 #### Set the working directory:
 
@@ -42,7 +43,7 @@ ym = np.array( [6.01, 6.11, 6.16, 6.22, 6.32, 6.43, 6.56] ) # corresponding inte
 
 
 ## Q4 :
-input_df = pd.read_csv('labex1_q4_input.csv') # read the input csv file created with JPM call option prices
+input_df_4 = pd.read_csv('labex1_q4_input.csv') # read the input csv file created with JPM call option prices
 S = 56.75 # Spot (closing) price of the JPM option on 15 August, 2014
 r = 0.0025 # Interest rate; fed fund rate on 15 August, 2014
 option_price_dt = '2014-08-15' # Options are priced on 15 August, 2014
@@ -50,6 +51,16 @@ expiration_dt = '2015-01-17' # Expiration date is 17 January, 2015
 sigma_minus = 0.001
 sigma_plus = 100 # intial estimated values of sigma- and sigma+ for bisection search
 tol4 = 10 ** (-5) # tolerance for bisection search
+
+
+## Q5 :
+input_df_5 = pd.read_csv('labex1_q5_input.csv') # read the input csv file created with marks
+fin = 0.45 # proportion of final exam marks
+asn = 0.20 # proportion of assignment marks
+mdt = 0.35 # proportion of midterm marks
+peter_asn = 12 # Peter's assignment marks (out of 20)
+peter_mdt = 16 # Peter's midterm marks (out of 30)
+
 
 
 ###############################################################################
@@ -220,8 +231,8 @@ e_dt = datetime.strptime(expiration_dt, '%Y-%m-%d')
 T = np.round( (e_dt - o_dt).days / 360 , 4 )
 
 ## Get the Strike Prices and Option Prices from the input file:
-K_list = input_df['Strike'].tolist()
-op_price_list = input_df['Last'].tolist()
+K_list = input_df_4['Strike'].tolist()
+op_price_list = input_df_4['Last'].tolist()
 
 ## Define the vanilla call option for Black Scholes:
 def vanilla_call_BS( K, op_price , sigma ):
@@ -321,3 +332,47 @@ plt.xlabel('Strike Prices ($)')
 plt.ylabel('Implied Volatility')
 plt.title('Q4.b. Strike Prices vs. Implied Volatilities')
 plt.show()
+
+
+# Q4 is done ##################################################################
+
+
+
+#### Q5: 5.	Peter, who is taking numerical analysis course in one University, 
+#thinks that a certain amount of studying could actually improve final grades. 
+#However, too much studying would not be warranted. Peter’s ambition (if that’s what one could call it!)
+# is to ultimately graduate with the minimum level of work. 
+# There are three weeks to go before the final test and the final mark is determined in the following way: 
+# Total mark=20% assignment + 30% Midterm test + 50% Final test. 
+# In order to decide how much work to do in the remaining 3 weeks,
+# Peter needs to be able to predict the final mark on the basis of the assignment mark and the midterm mark. 
+# Peter got 12/20 for assignment and 16/30 for midterm test. 
+# Peter then collect the final mark, assignment mark and midterm mark for 30 students who took numerical analysis course last year.
+# Please help Peter find the linear regression equation between the final test mark and assignment mark and Midterm mark.
+# Can Peter pass this course?  
+# Hint: Use QR decomposition to solve this multivariable least squares problem!
+
+## Perform Linear Regression on the 30 students' historical data, Final is the dependent variable 
+# Assigment and Midterm are the independent variables
+
+x = input_df_5[['Assignment' , 'Midterm']]
+y = input_df_5[['Final']]
+regr = LinearRegression().fit(x, y)
+
+# Predict Peter's final exam score from the Multiple Linear Regression Model Created:
+peter_fin = regr.predict( np.array ( [[peter_asn , peter_mdt]] ) )
+
+# Report if Peter will pass or not:
+peter_tot = peter_fin + peter_asn + peter_mdt
+peter_tot = peter_tot[0]
+
+if peter_tot > 50:
+    peter = "pass"
+else:
+    peter = "fail"
+
+# Print the result:    
+print("Q5. Peter's total score is", round( peter_tot[0] , 0 ) , "and therefore he will" , peter , "this course."  )
+
+
+# Q5 is done ##################################################################
