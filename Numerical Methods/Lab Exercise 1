@@ -9,10 +9,12 @@
 ## import the required libraries:
 
 import os
-#import pandas as pd
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+import scipy.stats as si
+from datetime import datetime
 
 #### Set the working directory:
 
@@ -23,20 +25,31 @@ os.chdir("D:/MQF Coursework/Term 3/QF607 Numerical Methods/Assignments Lab")
 ## Q1 : 
 i_minus = 0.01
 i_plus = 0.20 # intial estimated values of i- and i+ for bisection search
-thres = 10 ** (-5) # threshold for bisection search
+tol1 = 10 ** (-5) # tolerance for bisection search
 tot_tgt = 400_000 # target total value in $
 K = 400 # amt saved per month in $
 mnth = 240 # no. of months
 
 
 ## Q2 :
-tol = 10 ** (-5) # tolerance level for Jacobi & Gauss Siedel
+tol2 = 10 ** (-5) # tolerance level for Jacobi & Gauss Siedel
 n = 100 # dimension for the matrices
 
 
 ## Q3 :
 xm = np.array( [2, 3, 4, 5, 7, 10, 15] ) # settlement date (in years)
 ym = np.array( [6.01, 6.11, 6.16, 6.22, 6.32, 6.43, 6.56] ) # corresponding interest rates (in %)
+
+
+## Q4 :
+input_df = pd.read_csv('labex1_q4_input.csv') # read the input csv file created with JPM call option prices
+S = 56.75 # Spot (closing) price of the JPM option on 15 August, 2014
+r = 0.0025 # Interest rate; fed fund rate on 15 August, 2014
+option_price_dt = '2014-08-15' # Options are priced on 15 August, 2014
+expiration_dt = '2015-01-17' # Expiration date is 17 January, 2015
+sigma_minus = 0.001
+sigma_plus = 100 # intial estimated values of sigma- and sigma+ for bisection search
+tol4 = 10 ** (-5) # tolerance for bisection search
 
 
 ###############################################################################
@@ -47,46 +60,46 @@ ym = np.array( [6.01, 6.11, 6.16, 6.22, 6.32, 6.43, 6.56] ) # corresponding inte
 # finding methods that you have learned.
 
 ## Define the function for which we need to identify the value of interest rate:
-def func1 (i):
+def compd (i):
     tot_calc = ( K * ( ( ( 1 + ( i / 12 ) ) ** mnth ) - 1) ) / ( i / 12)
     diff = tot_calc - tot_tgt
     return ( diff ) 
+# compd function ends here
 
 ### Use Bisection search to get the value of i:
-def bisection (x_minus_in, x_plus_in):
+def bisection1 (x_minus_in, x_plus_in):
     i = 0.5 * ( x_minus_in + x_plus_in )
-    val = func1 (i)
+    val = compd(i)
     
-    # if abs ( val ) is less than the threshold, i is the solution
-    while abs( val ) > thres:
+    # if abs ( val ) is less than the tolerance, i is the solution
+    while abs( val ) > tol1:
         i = 0.5 * ( x_minus_in + x_plus_in )
-        val = func1 (i)
+        val = compd(i)
         
         # if val < 0, replace x_minus with i and rerun, as solution lies between i and x_plus
         if val < 0:
             x_minus_in = i
             i = 0.5 * ( x_minus_in + x_plus_in )
-            val = func1 (i)
+            val = compd(i)
             
         # if val > 0, replace x_plus with i and rerun, as solution lies between x_minus and i
         elif val > 0:
             x_plus_in = i
             i = 0.5 * ( x_minus_in + x_plus_in )
-            val = func1 (i)
+            val = compd(i)
             
         # error check
         else:
             return ('check the loop!')
          
-    return (i)
-        
-# bisection function ends here  
+    return (i)      
+# bisection1 function ends here  
 
 # Call the bisection function to get the required interest rate:
-p = bisection( i_minus , i_plus )     
+p = bisection1( i_minus , i_plus )     
 
 # Print the value :
-print ("Q1. The required interest rate 'i' is", np.round( p * 100 , 2 ) , "%" ) 
+print ("Q1. The required interest rate 'i' calculated by Bisection Search, is", np.round( p * 100 , 2 ) , "%" ) 
 
 
 # Q1 is done ##################################################################
@@ -114,7 +127,7 @@ for i in range(n - 1):
 def jacobi( A, b, tol ):
     
     # Create the up-triangular matrix:
-    U = np.triu( A ,k = 1 )
+    U = np.triu( A , k = 1 )
     
     # Create the low-triangular matrix:
     L = np.tril( A, k = -1 )
@@ -135,7 +148,7 @@ def jacobi( A, b, tol ):
  
 
 ## Define the gauss_seidel funtion:       
-def gauss_seidel( A, b, tol):
+def gauss_seidel( A, b, tol ):
     
     # Create the up-triangular matrix:
     U = np.triu(A,k=1)
@@ -155,8 +168,8 @@ def gauss_seidel( A, b, tol):
         
  
 # Call both the functions:       
-jacobi( A, b, tol )
-gauss_seidel( A, b, tol )
+jacobi( A, b, tol2 )
+gauss_seidel( A, b, tol2 )
 
 
 # Q2 is done ##################################################################
@@ -167,22 +180,144 @@ gauss_seidel( A, b, tol )
 #(The second column represents the settlement dates and third column represents the
 #corresponding interest rates)
 
-# define the function to interpolate the values for the settlement dates and interest rates
-flin = interp1d (xm, ym, kind='cubic' )
+# define the function to interpolate the values for the settlement dates and interest rates:
+f_lin = interp1d (xm, ym, kind='cubic' )
 
-xnew = np.linspace (0, 10, num=41, endpoint=True)
+# define the new series of settlement dates (in years) which needs to bes used for interpolation:
+x_new = list( range( 2, 16 ) )
 
-plt.plot(x, y, 'o', xnew, f(xnew), '-', xnew, f2(xnew), '--')
-plt.legend(['data', 'linear', 'cubic'], loc='best')
+# Plot the necessary graph; call the interpolation function while plotting:
+plt.figure(figsize=(10,7))
+plt.plot(xm, ym, 'o', x_new, f_lin(x_new), '--' )
+plt.legend(['available data', 'cubic interpolation'], loc='best')
+plt.xlabel('Settlement Dates (years)')
+plt.ylabel('Interest Rates (%)')
+plt.title('Q3. Cubic Spline Interpolation')
 plt.show()
 
-from gekko import GEKKO
-m= GEKKO()
-m.x=m.Param(value=np.linspace(1,15))
-m.y= m.Var()
-m.cspline(m.x,m.y,xm,ym)
-m.options.IMODE=2
-m.solve(disp=False)
-plt.plot(xm,ym,'bo',label='data')
-plt.plot(m.x,m.y,'r--',label='c')
-plt.xlabel('Settlement dates')
+
+# Q3 is done ##################################################################
+
+
+
+#### Q4: Use the Black and Scholes call option pricing formula to calculate the implied volatilities
+#corresponding to the strike prices given in the given table. (first column, strike price; third
+#column, option price) Please use one of the root finding methods taught in this course.
+#a. List your answers in a table (strike prices and implied volatilities).
+#b. Plot the strike prices against the implied volatilities.
+#The closing value of JPMorgan Chase & Co. (JPM) is 56.75 at 15 August, 2014.
+#The Expiration date for these options is January 17, 2015.
+#The interest is 0.25%. (This is the federal fund rate on 15-August-14).
+
+## Get the required T by calculating the time difference between option_price_dt & expiration_dt:
+o_dt = datetime.strptime(option_price_dt, '%Y-%m-%d')
+e_dt = datetime.strptime(expiration_dt, '%Y-%m-%d')
+T = np.round( (e_dt - o_dt).days / 360 , 4 )
+
+## Get the required T by calculating the time difference between option_price_dt & expiration_dt:
+o_dt = datetime.strptime(option_price_dt, '%Y-%m-%d')
+e_dt = datetime.strptime(expiration_dt, '%Y-%m-%d')
+T = np.round( (e_dt - o_dt).days / 360 , 4 )
+
+## Get the Strike Prices and Option Prices from the input file:
+K_list = input_df['Strike'].tolist()
+op_price_list = input_df['Last'].tolist()
+
+## Define the vanilla call option for Black Scholes:
+def vanilla_call_BS( K, op_price , sigma ):
+      
+    d1 = ( np.log( S / K ) + (r + 0.5 * sigma ** 2) * T) / ( sigma * np.sqrt( T ) )
+    d2 = d1 - sigma * np.sqrt( T ) 
+    
+    # Calculate the call option value based on the strike value from the table and sigma
+    van_call_bs = (S * si.norm.cdf(d1, 0.0, 1.0) - K * np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0))
+    
+    # Find the difference between the calculated option price and listed option price
+    diff = van_call_bs - op_price
+    
+    return (diff )
+
+## Initialize a list for Implied Volatility:
+Imp_vol = []
+
+## Define a function for Brent Search:
+
+def brent_search( x0, x1 , K , op_price):
+ 
+           
+    fx0 = vanilla_call_BS( K, op_price , x0 )
+    fx1 = vanilla_call_BS( K, op_price , x1 )
+ 
+    assert (fx0 * fx1) <= 0, "Root beyond guess estimates!" 
+ 
+    if abs(fx0) < abs(fx1):
+        x0, x1 = x1, x0
+        fx0, fx1 = fx1, fx0
+ 
+    x2, fx2 = x0, fx0
+ 
+    mflag = True
+    
+    while abs(x1-x0) > tol4:
+        fx0 = vanilla_call_BS( K, op_price , x0 )
+        fx1 = vanilla_call_BS( K, op_price , x1 )
+        fx2 = vanilla_call_BS( K, op_price , x2 )
+ 
+        if fx0 != fx2 and fx1 != fx2:
+            L0 = (x0 * fx1 * fx2) / ((fx0 - fx1) * (fx0 - fx2))
+            L1 = (x1 * fx0 * fx2) / ((fx1 - fx0) * (fx1 - fx2))
+            L2 = (x2 * fx1 * fx0) / ((fx2 - fx0) * (fx2 - fx1))
+            new = L0 + L1 + L2
+ 
+        else:
+            new = x1 - ( (fx1 * (x1 - x0)) / (fx1 - fx0) )
+ 
+        if ((new < ((3 * x0 + x1) / 4) or new > x1) or
+            (mflag == True and (abs(new - x1)) >= (abs(x1 - x2) / 2)) or
+            (mflag == False and (abs(new - x1)) >= (abs(x2 - d) / 2)) or
+            (mflag == True and (abs(x1 - x2)) < tol4) or
+            (mflag == False and (abs(x2 - d)) < tol4)):
+            new = (x0 + x1) / 2
+            mflag = True
+ 
+        else:
+            mflag = False
+ 
+        fnew = vanilla_call_BS( K, op_price , new )
+        d, x2 = x2, x1
+ 
+        if (fx0 * fnew) < 0:
+            x1 = new
+        else:
+            x0 = new
+ 
+        if abs(fx0) < abs(fx1):
+            x0, x1 = x1, x0
+      
+    Imp_vol.append( round( x1 , 4 ))
+
+# brent_search function ends here 
+
+## Run the function loop for all values of strike prices: 
+ 
+for j in range( len( K_list ) ):
+    brent_search(sigma_minus , sigma_plus , K_list[j] , op_price_list[j]) 
+    
+## Create the required table of Strike Prices vs. Implied Volatilities:
+
+K_ImpVol_df = pd.DataFrame({'Strike Price': K_list, 'Implied Volatility': Imp_vol}) 
+
+### Write the table to Excel
+writer = pd.ExcelWriter('LabEx1_q4_output_ams.xlsx')
+K_ImpVol_df.to_excel(writer,'Sheet1' )
+writer.save()   
+print("Q4.a. Table output in Excel Complete!")
+
+### Plot Strike Prices vs. Implied Volatilities:
+plt.figure(figsize=(10,7))
+plt.plot( K_list, Imp_vol, '--' )
+plt.plot( K_list, Imp_vol,'o' )
+plt.xlabel('Strike Prices ($)')
+plt.ylabel('Implied Volatility')
+plt.title('Q4.b. Strike Prices vs. Implied Volatilities')
+plt.show()
