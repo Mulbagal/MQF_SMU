@@ -1,134 +1,122 @@
 ####### File Header #######
-# Filename: QF603_mini_project_2_ams.py
+# Filename: Mean_Variance_Analysis_AbhayMS.py
 # Author: Abhay Mulbagal Suchindra
-# Course: Quantitative Analysis of Financial Markets QF603
-# Topic: Mini Project 2
-# Submission Date: 7 Nov 2018
+# Course: Asset Pricing QF600
+# Topic: HW 1 - Mean Variance Analysis
+# Submission Date: 24 Oct 2018
 ###########################
 
-### Import the required libraries:
+## import the required libraries:
+
 import os
 import pandas as pd
 import numpy as np
-import statsmodels.formula.api as sm
+import matplotlib.pyplot as plt
+
+#### Take user inputs:
+
+rangeR = 200  # plot range for y axis (returns)
+Rf = .13      # risk free rate in percentage Eg. '.13' signifies 0.13%
 
 ## set the working directory:
 
-os.chdir("D:/MQF Coursework/Term 2/QF603 Quantitative Analysis of Financial Markets/Assignments/Mini Project Task 2")
+os.chdir("D:/MQF Coursework/Term 2/QF600 Asset Pricing/Assignments/1")
 
-### Read the two input files provided:
-DJI = pd.read_csv('^DJI.csv')
-SnP = pd.read_csv('^GSPC.csv')
+## import the required input file:
 
-## Convert them to dataframes:
-dji_df_daily = pd.DataFrame(DJI)
-snp_df_daily = pd.DataFrame(SnP)
+df = pd.read_excel('Industry_Portfolios_working.xlsx')
 
-# subset only Date and Adj Close columns:
-dji_df_daily = pd.DataFrame(dji_df_daily, columns = ("Date", "Adj Close"))
-snp_df_daily = pd.DataFrame(snp_df_daily, columns = ("Date", "Adj Close"))
+## get the means of every asset industry return into a vector, dynamically
 
+R_vec = []
+SD_vec = []
+Industry = []
 
-## Function to convert daily log returns to yearly log returns: ###############
-    
-def yearly(x):
-    
-    x['Year'] = pd.DatetimeIndex(x['Date']).year
-    ## get max date per year
-    x_yearly = pd.DataFrame(x.groupby(['Year'], sort = True).max())
-    x_yearly = pd.DataFrame(x_yearly['Date'])
-    ## drop the row for 2018 as we don't have data for last day of Dec 2018, other years now have Dec last day values
-    x_yearly.reset_index(drop=True, inplace=True)
-    x_yearly = x_yearly[:-1]
-    ## merge original value to these last dates
-    x_yearly = pd.merge(x_yearly, x, on='Date')
-    
-    return x_yearly
+def dynamic_R_vec():
+    for i in list(df)[1:]:
+        R_vec.append(round(np.mean(df[str(i)].values),4))
+        Industry.append(str(i))
+        
+def dynamic_SD_vec():
+    for i in list(df)[1:]:
+        SD_vec.append(round(np.std(df[str(i)].values),4))
+        Industry.append(str(i))
+        
+dynamic_R_vec()
+Industry = [] 
+dynamic_SD_vec()
 
-## the function loop for yearly(x): ends here #################################
+R_vec_df = pd.DataFrame({'Industry':Industry, 'Mean': R_vec})
+SD_vec_df = pd.DataFrame({'Industry':Industry, 'SD':SD_vec })
+R_SD_vec_df = pd.merge(R_vec_df, SD_vec_df, on='Industry')
 
-## Function to create the 'LogReturns' column: ################################
-    
-def reshape_logreturns(x):
-    
-    # convert dates to DateTime format, and sort
-    x['Date'] = pd.to_datetime(x['Date'], format='%Y-%m-%d')
-    x['key'] = np.arange(len(x))
-    
-    # merge the same datasource, with the previous day's adj close price
-    x_copy = x
-    x_copy['Prev_key'] = x_copy['key'] -1
-    
-    x_merge = pd.merge( x_copy, x, left_on='Prev_key', right_on='key' ) 
-    x_merge = pd.DataFrame(x_merge, columns = ("Date_x", "Adj Close_x",  "Adj Close_y"))
-    x_merge.columns = ("Date", "Adj_Close", "Prev_Adj_Close")
-    
-    # calculate the log returns
-    x_merge['LogReturn'] = np.log(x_merge.Adj_Close) - np.log(x_merge.Prev_Adj_Close)
-             
-    ## Keep only required columns:
-    x_merge= pd.DataFrame(x_merge, columns = ("Date", "LogReturn"))
-    x_merge['Date'] = x_merge['Date'].dt.date # Keep only the date, time is not required in the timestamp
-    
-    ## Bind the Index name to the Log returns column:
-    # extract the first 3 letters ('dji' or 'snp' from the index name)
-    name = [i for i in globals() if globals()[i] is x][0][:3]
-    
-    # parse the existing column names into a list
-    col_names = x_merge.columns.tolist()
-    
-    # find the relevant column and append the 3 lettered 'name' in the list
-    col_names[col_names.index('LogReturn')] = name + '_LogReturn'
-    
-    # put the list as the new column names
-    x_merge.columns = col_names
-    
-    return(x_merge)
-## the function loop for reshape_logreturns(x) ends here ######################
-    
-## Function to perform regression using the two indices' logreturns: ##########
-    
-def regress(DJI, SNP):
-    ### Merge the two dataframes based on date to begin regression:
-    Reg_df = pd.merge( DJI, SNP, on='Date') 
+## get the covariances matrix of each pair of asset industry returns, dynamically
 
-    # The dependent variable is log return of DJI (dji_df_LogReturn) column (y)
-    # The independent variable is log return of DJI (snp_df_LogReturn) column (x)
+Values_mat = []
+Industry = []
 
-    col_names = Reg_df.columns.tolist()
-    col_names[col_names.index('dji_LogReturn')] = 'y_r_it'
-    col_names[col_names.index('snp_LogReturn')] = 'x_r_mt'
-    Reg_df.columns = col_names
+def dynamic_value_popn():
+    for i in list(df)[1:]:
+        Values_mat.append(df[str(i)].values)
+        Industry.append(str(i))
+
+dynamic_value_popn()
+
+Cov_mat = np.cov(Values_mat)
+Cov_mat_df = pd.DataFrame(Cov_mat, Industry)
+Cov_mat_df.columns = [Industry]
     
-    # Perform the simple linear regression:
-    est = sm.ols(formula = 'y_r_it ~ x_r_mt' ,data = Reg_df ).fit()
-    return est
+###### Begin creating the Minimum Variance Frontier:
+### MV Analysis without Riskless asset
+R = np.array(R_vec)
+R_tr = np.array(R_vec).T
+Cov_in = np.linalg.pinv(Cov_mat)
+e = np.array([1]*len(list(df)[1:])).T
+e_tr = np.array([1]*len(list(df)[1:]))
 
-## the function loop for regress(x): ends here ################################
-    
+alpha = np.dot(R_tr , np.dot(Cov_in, e))
+theta = np.dot(R_tr , np.dot(Cov_in, R))
+delta = np.dot(e_tr , np.dot(Cov_in, e))
 
-### call the reshape_logreturns function to get the required dataframes with DAILY log returns columns               
-DJI_daily = reshape_logreturns(dji_df_daily) 
-SNP_daily = reshape_logreturns(snp_df_daily) 
+MV_frontier = pd.DataFrame()
+MV_frontier['Return'] = [r/100 for r in range(rangeR+1)]
+MV_frontier['Std_Dev'] = ((1/delta)+((delta/(delta*theta-alpha**2))*((MV_frontier['Return']-alpha/delta)**2)))**0.5
 
-### call the yearly function to get the required dataframes with annual data
-DJI_yearly = yearly(DJI_daily)
-SNP_yearly = yearly(SNP_daily)
+## Plot the efficient frontier (without riskless asset) with a scatter plot
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(MV_frontier['Std_Dev'], MV_frontier['Return'])
+plt.title('Mean Variance Frontier without Riskless Asset')
+plt.ylabel('Average Monthly Returns')
+plt.xlabel('Standard Deviation of Monthly Returns')
+plt.show()
 
-### call the regress function to get the daily and yearly regression
-Daily_regression = regress(DJI_daily, SNP_daily)
-Yearly_regression = regress(DJI_yearly, SNP_yearly)
-      
-print(Daily_regression.summary(),  Yearly_regression.summary())
+### MV Analysis with Riskless asset
+MV_frontier['Std_Dev_rless']=(((MV_frontier['Return']-Rf)**2)/(theta-2*alpha*Rf+delta*Rf**2))**0.5
+list_overRf = [r/100 for r in range(int(Rf*100),rangeR+1)]
+MV_frontier_riskless = MV_frontier.loc[MV_frontier['Return'].isin(list_overRf)]
 
-print("Sigma of Daily Regression is : ", round (np.sqrt(Daily_regression.scale), 4))
-print("Sigma of Yearly Regression is : ", round (np.sqrt(Yearly_regression.scale), 4))
+## Plot the efficient frontier (with riskless asset) with a scatter plot
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(MV_frontier_riskless['Std_Dev'], MV_frontier_riskless['Return'], label='MV Frontier without Riskless asset' )
+plt.plot(MV_frontier_riskless['Std_Dev_rless'], MV_frontier_riskless['Return'], label='MV Frontier with Riskless asset')
+plt.title('Mean Variance Frontier with Riskless Asset')
+plt.ylabel('Average Monthly Returns')
+plt.xlabel('Standard Deviation of Monthly Returns')
+plt.legend
+plt.show()
 
-### Write the outputs to CSV:
-writer = open('Daily_LogReturns_OLS.csv','w')
-writer.write(Daily_regression.summary().as_csv())
-writer.close()
+#### Tangency Portfolio Analysis
+Rtg = (alpha*Rf-theta)/(delta*Rf-alpha)
+lambd = (Rtg-Rf)/(theta-2*alpha*Rf+delta*Rf**2)
+opt_wts = lambd * np.dot(Cov_in, R-Rf*e)
+Optimum_Portfolio = pd.DataFrame({'Industry':Industry, 'Weights':opt_wts })
 
-writer = open('Yearly_LogReturns_OLS.csv','w')
-writer.write(Yearly_regression.summary().as_csv())
-writer.close()
+#### Write the output to Excel
+#writer = pd.ExcelWriter('HW1_output_ams.xlsx')
+#R_SD_vec_df.to_excel(writer,'Sheet1')
+#Cov_mat_df.to_excel(writer,'Sheet2')
+#Optimum_Portfolio.to_excel(writer,'Sheet3')
+#writer.save()   
+print(e)
