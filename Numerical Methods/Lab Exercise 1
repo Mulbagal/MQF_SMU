@@ -19,7 +19,7 @@ from sklearn.linear_model import LinearRegression
 
 #### Set the working directory:
 
-os.chdir("D:/MQF Coursework/Term 3/QF607 Numerical Methods/Assignments Lab")
+os.chdir("D:/MQF Coursework/Term 3/QF607 Numerical Methods/Assignments Lab/1")
 
 #### Take user inputs:
 
@@ -60,6 +60,7 @@ asn = 0.20 # proportion of assignment marks
 mdt = 0.35 # proportion of midterm marks
 peter_asn = 12 # Peter's assignment marks (out of 20)
 peter_mdt = 16 # Peter's midterm marks (out of 30)
+pass_mark = 50 # Passing marks reqd.
 
 
 
@@ -366,7 +367,7 @@ peter_fin = regr.predict( np.array ( [[peter_asn , peter_mdt]] ) )
 peter_tot = peter_fin + peter_asn + peter_mdt
 peter_tot = peter_tot[0]
 
-if peter_tot > 50:
+if peter_tot > pass_mark:
     peter = "pass"
 else:
     peter = "fail"
