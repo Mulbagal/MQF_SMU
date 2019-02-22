@@ -1,0 +1,209 @@
+####### File Header ###########################################################
+# Filename: Lab_Ex_2_AbhayMS.py
+# Author: Abhay Mulbagal Suchindra
+# Course: Numerical Analysis QF607
+# Topic: Lab Exercise 2
+# Submission Date: 22 Feb 2019
+###############################################################################
+
+## import the required libraries:
+
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.stats as si
+
+#### Set the working directory:
+
+os.chdir("D:/MQF Coursework/Term 3/QF607 Numerical Methods/Assignments Lab/2")
+
+#### Take user inputs:
+ 
+t = 1 # t: Maturity of the option in yrs
+S = 30 # S: Spot price at current time
+r = 0.03 # r: Risk free interest rate
+sigma = 0.2 #sigma: Volatility of underlying asset
+K = 32 # K: Strike price of the option
+n_list = [10 * i for i in range (1 , 36 + 1)] # time steps from 10 to 360
+n_mc = 365 # number of time steps for Monte Carlo Simulation
+m_list = [500 * i for i in range (1, 20 +1)]
+
+
+###############################################################################
+
+#### A European call option price can be calculated from Black-Scholes
+# European call option price formula.
+# The parameter setting for the European call option: current stock price: $30; 
+# strike price: $32; maturity: 1 year; risk-free interest rate 3%, 
+# volatility of annual stock returns: 0.20
+
+# Define Vanilla // Call // Black-Scholes: ####################################
+def vanilla_call_BS(T):
+      
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
+    
+    van_call_bs = (S * si.norm.cdf(d1, 0.0, 1.0) - K * np.exp(-r * T) * si.norm.cdf(d2, 0.0, 1.0))
+    
+    return van_call_bs
+
+# Find the analytical results of call prices for all the time steps:
+    
+analytical_val = vanilla_call_BS(t)
+    
+
+### Q1 : Under Jarrow - Rudd Binomial Tree:
+    
+# get the list of all stock values list for all dt:
+option_val_list = []
+
+for n in n_list:
+    
+    dt = t / n
+    u = np.exp( ( ( r - 0.5 * (sigma ** 2) ) * dt ) + sigma * np.sqrt (dt) ) # moving up factor
+    d = np.exp( ( ( r - 0.5 * (sigma ** 2) ) * dt ) - sigma * np.sqrt (dt) ) # moving down factor
+        
+    # calculate the terminal stock price:
+    stock_val = np.zeros(( n+1 , n+1 ))
+    option_val = np.zeros(( n+1 , n+1 ))
+    
+    stock_val[0,0] = S
+    
+    for i in range (1, n+1):
+        stock_val[i ,0]  = stock_val[i-1 ,0] * u
+        for j in range(1, i+1):
+            stock_val[i,j] = stock_val[i-1 , j-1] * d
+                      
+    ## discount back the payoffs:
+    
+    for j in range(n+1):
+        option_val[n , j] = max ( 0 , stock_val[n , j] - K )
+    
+    for i in range( n-1 , -1 , -1):
+        for j in range (i+1):
+            option_val[i,j] = (0.5 * option_val [i+1 , j] + 0.5 * option_val[i+1 , j+1] )
+    
+    option_val_list.append( option_val[0,0] )
+    
+
+df_q1 = pd.DataFrame({'n':n_list, 'Jarrow_Rudd': option_val_list , 'Analytical' : analytical_val})
+df_q1['error'] = df_q1['Jarrow_Rudd'] - df_q1['Analytical']
+
+## Plot the graph q1
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(df_q1['n'], df_q1['error'], linestyle = '-', label = 'Jarrow Rudd Results')
+plt.legend
+plt.title('Jarrow Rudd - Analytical Output Error vs number of time steps')
+plt.ylabel('Error')
+plt.xlabel('Number of time steps')
+plt.show()    
+    
+    
+### Q2 : Finite Difference Method:
+option_val_list_2 = []
+
+temp_list = [20]
+
+for nx in n_list:
+    
+    dx = sigma * np.sqrt( 3 * t / nx ) # space step
+    dt = t / nx # time step  
+     
+    nu = r - 0.5* sigma ** 2
+    lu = -0.5 * ( ( sigma ** 2 * dt) / dx ** 2 + ( nu * dt ) / dx )
+    ld = -0.5 * ( ( sigma ** 2 * dt) / dx ** 2 - ( nu * dt ) / dx )
+    lm = 1 + ( sigma ** 2 * dt ) / ( dx ** 2 ) + r * dt
+
+    # Grid Setting
+    
+    num =  int( np.ceil( np.sqrt ( 3 * nx ) ) )
+    Grid = np.zeros (( num * 2 + 1, nx + 1 ))
+    
+    # Boundary condition : Option payoff
+    for i in range(Grid.shape[0]):
+        Grid[i,-1] = max(0, S * np.exp ( ( num - i ) * dx ) - K )
+        
+    # Boundary condition : Uppermost and Lowermost value    
+    Grid[0, -1] = ( Grid[0, -1] - Grid[1, -1] ).copy()
+    Grid[-1, -1] = 0
+    
+    # Linear system creation
+    L_matrix = np.zeros( ( num * 2 + 1 , num * 2 + 1 ) )
+    L_matrix[0, 0], L_matrix[-1, -2] = 1 , 1
+    L_matrix[0, 1], L_matrix[-1, -1] = -1 , -1
+    
+    for i in range( L_matrix.shape[0] - 2 ):
+        L_matrix[i+1, i] = lu
+        L_matrix[i+1, i+1] = lm
+        L_matrix[i+1, i+2] = ld
+            
+    #Create Grid
+    for i in range(Grid.shape [1] - 2, -1, -1):    
+        tem_matrix = Grid[:, [i+1]].copy()
+        tem_matrix = (np.linalg.inv( L_matrix ) @tem_matrix).copy()
+        tem_matrix[0, 0] = ( tem_matrix[0, 0] - tem_matrix[1, 0] ).copy()
+        tem_matrix[-1, 0] = 0
+        Grid[:, [i]] = tem_matrix.copy()
+    
+    option_val_list_2.append( Grid[ num, 0 ] )
+    
+        
+
+df_q2 = pd.DataFrame({'n':n_list, 'Implicit Finite': option_val_list_2 , 'Analytical' : analytical_val})
+df_q2['error'] = df_q2['Implicit Finite'] - df_q2['Analytical']
+
+## Plot the graph q2
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(df_q2['n'], df_q2['error'], linestyle = '-', label = 'Implicit Finite Results')
+plt.legend
+plt.title('Implicit Finite - Analytical Output Error vs number of time steps')
+plt.ylabel('Error')
+plt.xlabel('Number of time steps')
+plt.show()    
+
+
+### Q3 : Monte Carlo Simulation:
+option_val_list_3 = []
+
+for m in m_list:
+    
+    dt = t / n_mc
+    
+    # Zero array to store values (often faster than appending)
+    S_list = np.zeros((n_mc, m))
+    S_list[0] = S
+    
+    for x in range(1, n_mc):
+    # Draw random values to simulate Brownian motion
+        Z = np.random.standard_normal(m)
+        S_list[x] = S_list[x - 1] * np.exp( ( r - 0.5 * sigma ** 2) * dt + (sigma * np.sqrt( dt ) * Z ) )
+
+    # Sum and discount values
+    C = np.exp( -r * t ) * 1 / m * np.sum ( np.maximum ( S_list[-1] - K , 0 ) )
+    
+    option_val_list_3.append( C )
+  
+    
+df_q3 = pd.DataFrame({'m':m_list, 'Monte Carlo Simulations': option_val_list_3 , 'Analytical' : analytical_val})
+df_q3['error'] = df_q3['Monte Carlo Simulations'] - df_q3['Analytical']
+
+## Plot the graph q3
+plt.style.use('seaborn')
+plt.figure(figsize=(14,9))
+plt.plot(df_q3['m'], df_q3['error'], linestyle = '-', label = 'Monte Carlo Simulation Results')
+plt.legend
+plt.title('Monte Carlo Simulation - Analytical Output Error vs number of time steps')
+plt.ylabel('Error')
+plt.xlabel('Number of time steps')
+plt.show()       
+
+
+### Write the output to Excel
+writer = pd.ExcelWriter('Lab_Ex_2_output_ams.xlsx')
+df_q1.to_excel(writer,'Sheet1')
+df_q2.to_excel(writer,'Sheet2')
+df_q3.to_excel(writer,'Sheet3')
+writer.save()   
